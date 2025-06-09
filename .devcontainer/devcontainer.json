@@ -1,0 +1,47 @@
+{
+	"name": "Pileup Buster Development",
+	"dockerComposeFile": "../docker-compose.yml",
+	"service": "backend",
+	"workspaceFolder": "/app",
+	"shutdownAction": "stopCompose",
+	
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"ms-python.black-formatter",
+				"ms-python.flake8",
+				"bradlc.vscode-tailwindcss",
+				"esbenp.prettier-vscode",
+				"ms-vscode.vscode-typescript-next"
+			],
+			"settings": {
+				"python.defaultInterpreterPath": "/usr/local/bin/python",
+				"python.linting.enabled": true,
+				"python.linting.flake8Enabled": true,
+				"python.formatting.provider": "black",
+				"editor.formatOnSave": true
+			}
+		}
+	},
+
+	"forwardPorts": [3000, 5000, 27017],
+	"portsAttributes": {
+		"3000": {
+			"label": "Frontend",
+			"onAutoForward": "openBrowser"
+		},
+		"5000": {
+			"label": "Backend API",
+			"onAutoForward": "notify"
+		},
+		"27017": {
+			"label": "MongoDB",
+			"onAutoForward": "silent"
+		}
+	},
+
+	"postCreateCommand": "echo 'Pileup Buster development environment ready!'",
+	
+	"remoteUser": "appuser"
+}
