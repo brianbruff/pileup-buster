@@ -8,6 +8,39 @@
 
 ## Initial Setup
 
+### Option 1: Docker Setup (Recommended)
+
+The easiest way to get started with development:
+
+```bash
+# Clone and start the development environment
+git clone https://github.com/brianbruff/pileup-buster.git
+cd pileup-buster
+
+# Start development with live reload
+docker compose -f docker-compose.dev.yml up -d
+
+# View logs
+docker compose -f docker-compose.dev.yml logs -f
+```
+
+This automatically sets up:
+- ✅ MongoDB database
+- ✅ Backend FastAPI server with live reload
+- ✅ Frontend React development server
+- ✅ All dependencies installed
+
+**Access:**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:5000  
+- API Documentation: http://localhost:5000/docs
+
+See the [Docker Deployment Guide](DOCKER.md) for more details.
+
+### Option 2: Manual Setup
+
+If you prefer to run services manually:
+
 ### 1. Clone Repository
 ```bash
 git clone https://github.com/brianbruff/pileup-buster.git

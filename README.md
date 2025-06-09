@@ -6,10 +6,13 @@ A web application for ham radio operators to register their callsign on a callba
 
 ```
 pileup-buster/
-├── frontend/          # React frontend application
-├── backend/           # Python Flask API server
-├── docs/             # Documentation
-└── README.md         # This file
+├── frontend/             # React frontend application
+├── backend/              # Python FastAPI server
+├── docs/                 # Documentation
+├── .devcontainer/        # VS Code dev container configuration
+├── docker-compose.yml    # Production Docker configuration
+├── docker-compose.dev.yml # Development Docker configuration
+└── README.md            # This file
 ```
 
 ## Features
@@ -22,7 +25,34 @@ pileup-buster/
 
 ## Quick Start
 
-### Frontend Development
+### 🐳 Docker (Recommended)
+
+The easiest way to run the entire application:
+
+```bash
+# Clone the repository
+git clone https://github.com/brianbruff/pileup-buster.git
+cd pileup-buster
+
+# Start all services with Docker Compose
+docker compose up -d
+
+# Access the application
+# Frontend: http://localhost:3000
+# Backend API: http://localhost:5000
+# API Docs: http://localhost:5000/docs
+```
+
+For development with live reload:
+```bash
+docker compose -f docker-compose.dev.yml up -d
+```
+
+📚 See [Docker Deployment Guide](docs/DOCKER.md) for detailed instructions.
+
+### Manual Development Setup
+
+#### Frontend Development
 
 ```bash
 cd frontend
@@ -32,7 +62,7 @@ npm start
 
 The frontend will be available at http://localhost:3000
 
-### Backend Development
+#### Backend Development
 
 ```bash
 cd backend
@@ -42,11 +72,13 @@ python app.py
 
 The API will be available at http://localhost:5000
 
-### Environment Setup
+#### Environment Setup
 
 1. Copy `backend/.env.example` to `backend/.env`
 2. Update MongoDB connection string and secret key
 3. Ensure MongoDB Atlas cluster is accessible
+
+📚 See [Development Guide](docs/DEVELOPMENT.md) for detailed setup instructions.
 
 ## API Endpoints
 
@@ -64,6 +96,7 @@ The API will be available at http://localhost:5000
 ## Technology Stack
 
 - **Frontend**: React 18, CSS3, HTML5
-- **Backend**: Python 3, Flask, Flask-CORS
-- **Database**: MongoDB Atlas
-- **Development**: Node.js, npm, pip
+- **Backend**: Python 3, FastAPI, uvicorn
+- **Database**: MongoDB
+- **Deployment**: Docker, Docker Compose
+- **Development**: Node.js, npm, pip, VS Code Dev Containers
