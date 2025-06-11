@@ -1,0 +1,45 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+docs/
+
+# Development files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Dependencies
+frontend/node_modules/
+backend/.venv/
+__pycache__/
+*.pyc
+.poetry/
+
+# Build artifacts
+frontend/build/
+frontend/dist/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+.coverage
+.pytest_cache/
+
+# Misc
+*.md
+!README.md

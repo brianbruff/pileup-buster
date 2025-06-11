@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  pileup-buster:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - MONGO_URI=${MONGO_URI:-mongodb://mongo:27017/pileup_buster}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - QRZ_USERNAME=${QRZ_USERNAME}
+      - QRZ_PASSWORD=${QRZ_PASSWORD}
+   
