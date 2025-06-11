@@ -27,6 +27,7 @@ def create_app():
     # Configuration (stored as app state)
     app.state.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key')
     app.state.mongo_uri = os.getenv('MONGO_URI', 'mongodb://localhost:27017/pileup_buster')
+    app.state.max_queue_size = int(os.getenv('MAX_QUEUE_SIZE', '4'))
     
     # Include routers
     from app.routes.queue import queue_router

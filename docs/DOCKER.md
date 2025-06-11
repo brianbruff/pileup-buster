@@ -49,6 +49,7 @@ The backend supports these environment variables:
 
 - `MONGO_URI`: MongoDB connection string (default: `mongodb://mongodb:27017/pileup_buster`)
 - `SECRET_KEY`: Secret key for API security
+- `MAX_QUEUE_SIZE`: Maximum number of callsigns allowed in queue (default: `4`)
 - `FLASK_ENV`: Environment mode (development/production)
 - `FLASK_DEBUG`: Enable debug mode (true/false)
 

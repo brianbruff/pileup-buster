@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from datetime import datetime
 from typing import List, Dict, Any
@@ -18,7 +18,7 @@ class QueueEntry(BaseModel):
     position: int
 
 @queue_router.post('/register')
-def register_callsign(request: CallsignRequest):
+def register_callsign(request: CallsignRequest, fastapi_request: Request):
     """Register a callsign in the queue"""
     callsign = request.callsign.upper().strip()
     
@@ -29,6 +29,11 @@ def register_callsign(request: CallsignRequest):
     for entry in queue_storage:
         if entry['callsign'] == callsign:
             raise HTTPException(status_code=400, detail='Callsign already in queue')
+    
+    # Check queue size limit
+    max_queue_size = fastapi_request.app.state.max_queue_size
+    if len(queue_storage) >= max_queue_size:
+        raise HTTPException(status_code=400, detail=f'Queue is full. Maximum {max_queue_size} callsigns allowed.')
     
     # Add to queue
     entry = {
