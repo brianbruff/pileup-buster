@@ -37,6 +37,11 @@ def create_app():
     app.include_router(queue_router, prefix="/api/queue", tags=["queue"])
     app.include_router(admin_router, prefix="/api/admin", tags=["admin"])
     
+    # Health check endpoint for monitoring
+    @app.get("/health")
+    async def health_check():
+        return {"status": "healthy", "service": "pileup-buster"}
+    
     # Serve static files (React frontend)
     static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
     if os.path.exists(static_dir):

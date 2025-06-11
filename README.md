@@ -32,13 +32,16 @@ Run the complete application with Docker:
 git clone https://github.com/brianbruff/pileup-buster.git
 cd pileup-buster
 
-# Start all services
+# Configure environment variables
+cp backend/.env.example backend/.env
+# Edit backend/.env with your configuration
+
+# Start all services (production mode)
 docker compose up -d
 ```
 
-Services will be available at:
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:5000
+The application will be available at:
+- Application: http://localhost:8080 (combined frontend + backend)
 - MongoDB: localhost:27017
 
 For development with hot-reload:
@@ -46,7 +49,31 @@ For development with hot-reload:
 docker compose -f docker-compose.dev.yml up
 ```
 
+Development services will be available at:
+- Frontend: http://localhost:3000 (React dev server)
+- Backend API: http://localhost:8000 (FastAPI with auto-reload)
+- MongoDB: localhost:27017
+
 See [Docker Setup Guide](docs/DOCKER.md) for detailed instructions.
+
+### ☁️ GCP Cloud Run Deployment
+
+Deploy to Google Cloud Run with the included script:
+
+```bash
+# Set required environment variables
+export MONGO_URI="your-mongodb-atlas-connection-string"
+export SECRET_KEY="your-secret-key"
+export ADMIN_USERNAME="admin"
+export ADMIN_PASSWORD="your-secure-password"
+
+# Optional: QRZ.com integration
+export QRZ_USERNAME="your-qrz-username"
+export QRZ_PASSWORD="your-qrz-password"
+
+# Deploy to Cloud Run
+./deploy-cloud-run.sh your-gcp-project-id
+```
 
 ### Manual Setup
 
@@ -64,11 +91,16 @@ The frontend will be available at http://localhost:3000
 
 ```bash
 cd backend
+# Using Poetry (recommended)
+poetry install
+poetry run dev
+
+# OR using pip
 pip install -r requirements.txt
-python app.py
+python -m app.app
 ```
 
-The API will be available at http://localhost:5000
+The API will be available at http://localhost:8000
 
 ### Environment Setup
 
