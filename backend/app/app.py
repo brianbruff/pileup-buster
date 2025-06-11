@@ -1,5 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 import os
 import uvicorn
@@ -35,13 +37,32 @@ def create_app():
     app.include_router(queue_router, prefix="/api/queue", tags=["queue"])
     app.include_router(admin_router, prefix="/api/admin", tags=["admin"])
     
+    # Serve static files (React frontend)
+    static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+    if os.path.exists(static_dir):
+        app.mount("/static", StaticFiles(directory=static_dir), name="static")
+        
+        # Serve React app for all other routes (SPA fallback)
+        @app.get("/{full_path:path}")
+        async def serve_react_app(full_path: str):
+            # Don't intercept API routes
+            if full_path.startswith("api/"):
+                raise HTTPException(status_code=404, detail="API endpoint not found")
+            
+            # Serve index.html for all other routes (React Router)
+            index_file = os.path.join(static_dir, "index.html")
+            if os.path.exists(index_file):
+                return FileResponse(index_file)
+            raise HTTPException(status_code=404, detail="Frontend not found")
+    
     return app
 
 app = create_app()
 
 def main():
     """Entry point for the application script"""
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.getenv('PORT', 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
 
 if __name__ == '__main__':
     main()
