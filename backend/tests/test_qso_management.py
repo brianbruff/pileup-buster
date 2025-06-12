@@ -45,8 +45,7 @@ class TestQSOManagement:
         }
         mock_db.set_current_qso.return_value = {
             'callsign': 'KC1ABC',
-            'timestamp': '2024-01-01T12:01:00',
-            'started_by': 'admin'
+            'timestamp': '2024-01-01T12:01:00'
         }
         mock_db.get_queue_count.return_value = 1
         
@@ -62,7 +61,7 @@ class TestQSOManagement:
         # Verify the correct calls were made
         mock_db.clear_current_qso.assert_called_once()
         mock_db.get_next_callsign.assert_called_once()
-        mock_db.set_current_qso.assert_called_once_with('KC1ABC', 'admin')
+        mock_db.set_current_qso.assert_called_once_with('KC1ABC')
     
     def test_next_with_queue_and_current_qso(self, test_client):
         """Test calling Next with queue and current QSO - should clear QSO and move first to QSO"""
@@ -71,8 +70,7 @@ class TestQSOManagement:
         # Mock current QSO exists and queue has entries
         mock_db.clear_current_qso.return_value = {
             'callsign': 'W1ABC',
-            'timestamp': '2024-01-01T11:00:00',
-            'started_by': 'admin'
+            'timestamp': '2024-01-01T11:00:00'
         }
         mock_db.get_next_callsign.return_value = {
             'callsign': 'KC1XYZ',
@@ -81,8 +79,7 @@ class TestQSOManagement:
         }
         mock_db.set_current_qso.return_value = {
             'callsign': 'KC1XYZ',
-            'timestamp': '2024-01-01T12:01:00',
-            'started_by': 'admin'
+            'timestamp': '2024-01-01T12:01:00'
         }
         mock_db.get_queue_count.return_value = 0
         
@@ -103,8 +100,7 @@ class TestQSOManagement:
         # Mock current QSO exists but queue is empty
         mock_db.clear_current_qso.return_value = {
             'callsign': 'W1ABC',
-            'timestamp': '2024-01-01T11:00:00',
-            'started_by': 'admin'
+            'timestamp': '2024-01-01T11:00:00'
         }
         mock_db.get_next_callsign.return_value = None
         
@@ -153,8 +149,7 @@ class TestQSOManagement:
         # Mock active QSO
         mock_db.get_current_qso.return_value = {
             'callsign': 'KC1ABC',
-            'timestamp': '2024-01-01T12:00:00Z',
-            'started_by': 'admin'
+            'timestamp': '2024-01-01T12:00:00Z'
         }
         
         response = client.get('/api/admin/qso', auth=('admin', 'admin'))
@@ -185,8 +180,7 @@ class TestQSOManagement:
         # Mock clearing active QSO
         mock_db.clear_current_qso.return_value = {
             'callsign': 'KC1ABC',
-            'timestamp': '2024-01-01T12:00:00Z',
-            'started_by': 'admin'
+            'timestamp': '2024-01-01T12:00:00Z'
         }
         
         response = client.delete('/api/admin/qso', auth=('admin', 'admin'))
@@ -225,15 +219,13 @@ class TestDatabaseQSOManagement:
         mock_qso_collection.find_one.return_value = {
             '_id': 'current_qso',
             'callsign': 'KC1ABC',
-            'timestamp': '2024-01-01T12:00:00Z',
-            'started_by': 'admin'
+            'timestamp': '2024-01-01T12:00:00Z'
         }
         
         result = db.get_current_qso()
         
         assert result['callsign'] == 'KC1ABC'
         assert result['timestamp'] == '2024-01-01T12:00:00Z'
-        assert result['started_by'] == 'admin'
         assert '_id' not in result  # MongoDB ObjectId should be removed
     
     def test_get_current_qso_when_none_exists(self):
@@ -257,10 +249,9 @@ class TestDatabaseQSOManagement:
         db = QueueDatabase()
         db.qso_collection = mock_qso_collection
         
-        result = db.set_current_qso('KC1ABC', 'admin')
+        result = db.set_current_qso('KC1ABC')
         
         assert result['callsign'] == 'KC1ABC'
-        assert result['started_by'] == 'admin'
         assert 'timestamp' in result
         
         # Verify the replace_one was called
@@ -281,15 +272,13 @@ class TestDatabaseQSOManagement:
         mock_qso_collection.find_one_and_delete.return_value = {
             '_id': 'current_qso',
             'callsign': 'KC1ABC',
-            'timestamp': '2024-01-01T12:00:00Z',
-            'started_by': 'admin'
+            'timestamp': '2024-01-01T12:00:00Z'
         }
         
         result = db.clear_current_qso()
         
         assert result['callsign'] == 'KC1ABC'
         assert result['timestamp'] == '2024-01-01T12:00:00Z'
-        assert result['started_by'] == 'admin'
         assert '_id' not in result  # MongoDB ObjectId should be removed
         
         # Verify the find_one_and_delete was called

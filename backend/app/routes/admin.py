@@ -76,7 +76,7 @@ def next_callsign(username: str = Depends(verify_admin_credentials)):
                 raise HTTPException(status_code=400, detail='Queue is empty and no active QSO')
         
         # Someone was in queue - put them into QSO status
-        current_qso = queue_db.set_current_qso(next_entry["callsign"], username)
+        current_qso = queue_db.set_current_qso(next_entry["callsign"])
         remaining_count = queue_db.get_queue_count()
         
         response_data = {

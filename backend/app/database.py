@@ -261,13 +261,12 @@ class QueueDatabase:
         # Remove MongoDB ObjectId from response
         result = {
             "callsign": qso_doc.get("callsign"),
-            "timestamp": qso_doc.get("timestamp"),
-            "started_by": qso_doc.get("started_by")
+            "timestamp": qso_doc.get("timestamp")
         }
         
         return result
 
-    def set_current_qso(self, callsign: str, started_by: str = "admin") -> Dict[str, Any]:
+    def set_current_qso(self, callsign: str) -> Dict[str, Any]:
         """Set a callsign as current QSO"""
         if self.qso_collection is None:
             raise Exception("Database connection not available")
@@ -276,8 +275,7 @@ class QueueDatabase:
         qso_update = {
             "_id": "current_qso",
             "callsign": callsign,
-            "timestamp": datetime.utcnow().isoformat(),
-            "started_by": started_by
+            "timestamp": datetime.utcnow().isoformat()
         }
         
         self.qso_collection.replace_one(
@@ -288,8 +286,7 @@ class QueueDatabase:
         
         result = {
             "callsign": callsign,
-            "timestamp": qso_update["timestamp"],
-            "started_by": started_by
+            "timestamp": qso_update["timestamp"]
         }
         
         return result
@@ -308,8 +305,7 @@ class QueueDatabase:
         # Remove MongoDB ObjectId from response
         result = {
             "callsign": qso_doc.get("callsign"),
-            "timestamp": qso_doc.get("timestamp"),
-            "started_by": qso_doc.get("started_by")
+            "timestamp": qso_doc.get("timestamp")
         }
         
         return result
