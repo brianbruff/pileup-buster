@@ -130,3 +130,39 @@ def set_system_status(
             status_code=500, 
             detail=f'Database error: {str(e)}'
         )
+
+@admin_router.get('/qso')
+def get_current_qso(username: str = Depends(verify_admin_credentials)):
+    """Get the current QSO status"""
+    try:
+        current_qso = queue_db.get_current_qso()
+        if current_qso:
+            return {
+                'current_qso': current_qso,
+                'active': True
+            }
+        else:
+            return {
+                'current_qso': None,
+                'active': False
+            }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Database error: {str(e)}')
+
+@admin_router.delete('/qso')
+def clear_current_qso(username: str = Depends(verify_admin_credentials)):
+    """Manually clear the current QSO status"""
+    try:
+        cleared_qso = queue_db.clear_current_qso()
+        if cleared_qso:
+            return {
+                'message': f'QSO with {cleared_qso["callsign"]} cleared',
+                'cleared_qso': cleared_qso
+            }
+        else:
+            return {
+                'message': 'No active QSO to clear',
+                'cleared_qso': None
+            }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Database error: {str(e)}')

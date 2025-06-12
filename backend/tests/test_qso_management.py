@@ -146,6 +146,70 @@ class TestQSOManagement:
         response = client.post('/api/admin/queue/next', auth=('wrong', 'wrong'))
         assert response.status_code == 401
 
+    def test_get_current_qso_when_active(self, test_client):
+        """Test getting current QSO status when one is active"""
+        client, mock_db = test_client
+        
+        # Mock active QSO
+        mock_db.get_current_qso.return_value = {
+            'callsign': 'KC1ABC',
+            'timestamp': '2024-01-01T12:00:00Z',
+            'started_by': 'admin'
+        }
+        
+        response = client.get('/api/admin/qso', auth=('admin', 'admin'))
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data['active'] is True
+        assert data['current_qso']['callsign'] == 'KC1ABC'
+    
+    def test_get_current_qso_when_none_active(self, test_client):
+        """Test getting current QSO status when none is active"""
+        client, mock_db = test_client
+        
+        # Mock no active QSO
+        mock_db.get_current_qso.return_value = None
+        
+        response = client.get('/api/admin/qso', auth=('admin', 'admin'))
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data['active'] is False
+        assert data['current_qso'] is None
+    
+    def test_clear_current_qso_when_active(self, test_client):
+        """Test manually clearing QSO when one is active"""
+        client, mock_db = test_client
+        
+        # Mock clearing active QSO
+        mock_db.clear_current_qso.return_value = {
+            'callsign': 'KC1ABC',
+            'timestamp': '2024-01-01T12:00:00Z',
+            'started_by': 'admin'
+        }
+        
+        response = client.delete('/api/admin/qso', auth=('admin', 'admin'))
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert 'QSO with KC1ABC cleared' in data['message']
+        assert data['cleared_qso']['callsign'] == 'KC1ABC'
+    
+    def test_clear_current_qso_when_none_active(self, test_client):
+        """Test manually clearing QSO when none is active"""
+        client, mock_db = test_client
+        
+        # Mock no active QSO to clear
+        mock_db.clear_current_qso.return_value = None
+        
+        response = client.delete('/api/admin/qso', auth=('admin', 'admin'))
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert 'No active QSO to clear' in data['message']
+        assert data['cleared_qso'] is None
+
 
 class TestDatabaseQSOManagement:
     """Test the database layer QSO management functionality"""
