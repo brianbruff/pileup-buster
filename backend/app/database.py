@@ -15,6 +15,7 @@ class QueueDatabase:
         self.db = None
         self.collection: Optional[Collection] = None
         self.status_collection: Optional[Collection] = None
+        self.qso_collection: Optional[Collection] = None
         self._connect()
     
     def _connect(self):
@@ -31,6 +32,7 @@ class QueueDatabase:
             self.db = self.client[db_name]
             self.collection = self.db.queue
             self.status_collection = self.db.status
+            self.qso_collection = self.db.currentqso
             
             # Test connection with short timeout
             self.client.admin.command('ping')
@@ -43,6 +45,7 @@ class QueueDatabase:
             self.db = None
             self.collection = None
             self.status_collection = None
+            self.qso_collection = None
     
     def register_callsign(self, callsign: str) -> Dict[str, Any]:
         """Register a callsign in the queue"""
@@ -243,6 +246,73 @@ class QueueDatabase:
         except Exception:
             # If we can't check status, default to inactive for safety
             return False
+
+    def get_current_qso(self) -> Optional[Dict[str, Any]]:
+        """Get the current QSO callsign if any"""
+        if self.qso_collection is None:
+            raise Exception("Database connection not available")
+        
+        # Find the current QSO document
+        qso_doc = self.qso_collection.find_one({"_id": "current_qso"})
+        
+        if not qso_doc:
+            return None
+        
+        # Remove MongoDB ObjectId from response
+        result = {
+            "callsign": qso_doc.get("callsign"),
+            "timestamp": qso_doc.get("timestamp"),
+            "started_by": qso_doc.get("started_by")
+        }
+        
+        return result
+
+    def set_current_qso(self, callsign: str, started_by: str = "admin") -> Dict[str, Any]:
+        """Set a callsign as current QSO"""
+        if self.qso_collection is None:
+            raise Exception("Database connection not available")
+        
+        # Create or update current QSO document
+        qso_update = {
+            "_id": "current_qso",
+            "callsign": callsign,
+            "timestamp": datetime.utcnow().isoformat(),
+            "started_by": started_by
+        }
+        
+        self.qso_collection.replace_one(
+            {"_id": "current_qso"},
+            qso_update,
+            upsert=True
+        )
+        
+        result = {
+            "callsign": callsign,
+            "timestamp": qso_update["timestamp"],
+            "started_by": started_by
+        }
+        
+        return result
+
+    def clear_current_qso(self) -> Optional[Dict[str, Any]]:
+        """Remove current QSO callsign and return what was cleared"""
+        if self.qso_collection is None:
+            raise Exception("Database connection not available")
+        
+        # Find and remove the current QSO document
+        qso_doc = self.qso_collection.find_one_and_delete({"_id": "current_qso"})
+        
+        if not qso_doc:
+            return None
+        
+        # Remove MongoDB ObjectId from response
+        result = {
+            "callsign": qso_doc.get("callsign"),
+            "timestamp": qso_doc.get("timestamp"),
+            "started_by": qso_doc.get("started_by")
+        }
+        
+        return result
 
 
 # Global database instance

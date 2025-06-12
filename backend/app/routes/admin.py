@@ -53,18 +53,45 @@ def clear_queue(username: str = Depends(verify_admin_credentials)):
 
 @admin_router.post('/queue/next')
 def next_callsign(username: str = Depends(verify_admin_credentials)):
-    """Process the next callsign in queue"""
+    """Process the next callsign in queue with QSO status management"""
     try:
-        next_entry = queue_db.get_next_callsign()
-        if not next_entry:
-            raise HTTPException(status_code=400, detail='Queue is empty')
+        # Clear any current QSO first
+        cleared_qso = queue_db.clear_current_qso()
         
+        # Try to get the next callsign from queue
+        next_entry = queue_db.get_next_callsign()
+        
+        if not next_entry:
+            # No one in queue
+            if cleared_qso:
+                # Had a QSO but no queue - return info about cleared QSO
+                return {
+                    'message': f'QSO with {cleared_qso["callsign"]} cleared. Queue is empty.',
+                    'cleared_qso': cleared_qso,
+                    'current_qso': None,
+                    'remaining': 0
+                }
+            else:
+                # No QSO and no queue - nothing to do
+                raise HTTPException(status_code=400, detail='Queue is empty and no active QSO')
+        
+        # Someone was in queue - put them into QSO status
+        current_qso = queue_db.set_current_qso(next_entry["callsign"], username)
         remaining_count = queue_db.get_queue_count()
-        return {
-            'message': f'Next callsign: {next_entry["callsign"]}',
+        
+        response_data = {
+            'message': f'Next callsign: {next_entry["callsign"]} is now in QSO',
             'processed': next_entry,
+            'current_qso': current_qso,
             'remaining': remaining_count
         }
+        
+        if cleared_qso:
+            response_data['cleared_qso'] = cleared_qso
+            response_data['message'] = f'QSO with {cleared_qso["callsign"]} cleared. Next callsign: {next_entry["callsign"]} is now in QSO'
+        
+        return response_data
+        
     except HTTPException:
         raise
     except Exception as e:
