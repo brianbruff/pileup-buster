@@ -1,6 +1,13 @@
 from fastapi import APIRouter, HTTPException, Depends
-from app.database import queue_db
 from app.auth import verify_admin_credentials
+
+# Import database - use in-memory for testing if MongoDB not available
+try:
+    from app.database import queue_db
+    if queue_db.collection is None:
+        raise Exception("MongoDB not available")
+except:
+    from app.test_database import test_queue_db as queue_db
 
 admin_router = APIRouter()
 

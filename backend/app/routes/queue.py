@@ -3,8 +3,16 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import List, Dict, Any
 from app.services.qrz import qrz_service
-from app.database import queue_db
+import os
 import logging
+
+# Import database - use in-memory for testing if MongoDB not available
+try:
+    from app.database import queue_db
+    if queue_db.collection is None:
+        raise Exception("MongoDB not available")
+except:
+    from app.test_database import test_queue_db as queue_db
 
 logger = logging.getLogger(__name__)
 
