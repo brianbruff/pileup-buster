@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import './App.css'
 import CurrentActiveCallsign, { type CurrentActiveUser } from './components/CurrentActiveCallsign'
-import WaitingQueue, { type QueueItem } from './components/WaitingQueue'
+import WaitingQueue from './components/WaitingQueue'
+import { type QueueItemData } from './components/QueueItem'
 
 // Sample data for demonstration
-const sampleQueueData: QueueItem[] = [
+const sampleQueueData: QueueItemData[] = [
   { callsign: 'EI6JGB', location: 'San Juan, Puerto Rico' },
   { callsign: 'EI5JBB', location: 'Atlanta, Georgia' },
   { callsign: 'EI2HF', location: 'Vancouver, Canada' },
