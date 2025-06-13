@@ -84,6 +84,14 @@ class QueueDatabase:
         if '_id' in entry:
             del entry['_id']
         
+        # Broadcast WebSocket event
+        try:
+            from app.websocket_manager import websocket_manager
+            websocket_manager.broadcast_queue_update("add", callsign, entry)
+        except Exception as e:
+            # Don't fail the database operation if WebSocket broadcast fails
+            print(f"WebSocket broadcast error: {e}")
+        
         return entry
     
     def find_callsign(self, callsign: str) -> Optional[Dict[str, Any]]:
@@ -136,6 +144,15 @@ class QueueDatabase:
         if entry and '_id' in entry:
             del entry['_id']
         
+        # Broadcast WebSocket event if entry was found
+        if entry:
+            try:
+                from app.websocket_manager import websocket_manager
+                websocket_manager.broadcast_queue_update("remove", callsign, entry)
+            except Exception as e:
+                # Don't fail the database operation if WebSocket broadcast fails
+                print(f"WebSocket broadcast error: {e}")
+        
         return entry
     
     def clear_queue(self) -> int:
@@ -145,6 +162,15 @@ class QueueDatabase:
         
         count = self.collection.count_documents({})
         self.collection.delete_many({})
+        
+        # Broadcast WebSocket event
+        try:
+            from app.websocket_manager import websocket_manager
+            websocket_manager.broadcast_queue_update("clear", queue_data={"cleared_count": count})
+        except Exception as e:
+            # Don't fail the database operation if WebSocket broadcast fails
+            print(f"WebSocket broadcast error: {e}")
+        
         return count
     
     def get_next_callsign(self) -> Optional[Dict[str, Any]]:
@@ -160,6 +186,15 @@ class QueueDatabase:
         
         if entry and '_id' in entry:
             del entry['_id']
+        
+        # Broadcast WebSocket event if entry was found
+        if entry:
+            try:
+                from app.websocket_manager import websocket_manager
+                websocket_manager.broadcast_queue_update("next", entry.get("callsign"), entry)
+            except Exception as e:
+                # Don't fail the database operation if WebSocket broadcast fails
+                print(f"WebSocket broadcast error: {e}")
         
         return entry
     
@@ -232,6 +267,17 @@ class QueueDatabase:
             "cleared_count": cleared_count
         }
         
+        # Broadcast WebSocket event
+        try:
+            from app.websocket_manager import websocket_manager
+            websocket_manager.broadcast_system_status_update(active, updated_by, {
+                "queue_cleared": True,
+                "cleared_count": cleared_count
+            })
+        except Exception as e:
+            # Don't fail the database operation if WebSocket broadcast fails
+            print(f"WebSocket broadcast error: {e}")
+        
         return result
     
     def get_current_qso(self) -> Optional[Dict[str, Any]]:
@@ -271,10 +317,20 @@ class QueueDatabase:
             upsert=True
         )
         
-        return {
+        result = {
             "callsign": callsign,
             "timestamp": qso_entry["timestamp"]
         }
+        
+        # Broadcast WebSocket event
+        try:
+            from app.websocket_manager import websocket_manager
+            websocket_manager.broadcast_qso_update("start", callsign, result)
+        except Exception as e:
+            # Don't fail the database operation if WebSocket broadcast fails
+            print(f"WebSocket broadcast error: {e}")
+        
+        return result
     
     def clear_current_qso(self) -> Optional[Dict[str, Any]]:
         """Clear the current QSO"""
@@ -286,10 +342,20 @@ class QueueDatabase:
         if not entry:
             return None
         
-        return {
+        result = {
             "callsign": entry.get("callsign"),
             "timestamp": entry.get("timestamp")
         }
+        
+        # Broadcast WebSocket event
+        try:
+            from app.websocket_manager import websocket_manager
+            websocket_manager.broadcast_qso_update("end", result.get("callsign"), result)
+        except Exception as e:
+            # Don't fail the database operation if WebSocket broadcast fails
+            print(f"WebSocket broadcast error: {e}")
+        
+        return result
     
     def is_system_active(self) -> bool:
         """Check if the system is currently active"""

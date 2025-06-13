@@ -41,10 +41,12 @@ def create_app():
     from app.routes.queue import queue_router
     from app.routes.admin import admin_router
     from app.routes.public import public_router
+    from app.routes.websocket import websocket_router
     
     app.include_router(queue_router, prefix="/api/queue", tags=["queue"])
     app.include_router(admin_router, prefix="/api/admin", tags=["admin"])
     app.include_router(public_router, prefix="/api/public", tags=["public"])
+    app.include_router(websocket_router, prefix="/api", tags=["websocket"])
     
     return app
 
