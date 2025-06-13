@@ -32,100 +32,13 @@ export function usePileupBuster(): UsePileupBusterReturn {
     return `${protocol}//${host}/api/ws`;
   };
 
-  // Handle WebSocket messages
-  const handleWebSocketMessage = useCallback((message: WebSocketMessage) => {
-    console.log('Received WebSocket message:', message);
-
-    switch (message.type) {
-      case 'queue_update':
-        handleQueueUpdate(message.data);
-        break;
-      case 'qso_update':
-        handleQSOUpdate(message.data);
-        break;
-      case 'system_status_update':
-        handleSystemStatusUpdate(message.data);
-        break;
-      case 'connection':
-      case 'heartbeat':
-        // Connection/heartbeat messages don't need special handling
-        break;
-      default:
-        console.log('Unknown WebSocket message type:', message.type);
+  const refreshCurrentQSO = useCallback(async () => {
+    const result = await apiService.getCurrentQSO();
+    if (result.data !== undefined) {
+      setCurrentQSO(result.data);
     }
   }, []);
 
-  const handleQueueUpdate = (data: any) => {
-    switch (data.action) {
-      case 'add':
-        // Add new callsign to queue
-        setQueue(prev => [...prev, {
-          callsign: data.callsign,
-          timestamp: data.timestamp,
-          position: data.position || prev.length + 1
-        }]);
-        break;
-      case 'remove':
-        // Remove callsign from queue
-        setQueue(prev => prev.filter(entry => entry.callsign !== data.callsign));
-        break;
-      case 'clear':
-        // Clear the entire queue
-        setQueue([]);
-        break;
-      case 'next':
-        // Remove the next callsign (it moved to QSO)
-        setQueue(prev => prev.filter(entry => entry.callsign !== data.callsign));
-        break;
-      default:
-        // For unknown actions, refresh the data
-        refreshData();
-    }
-  };
-
-  const handleQSOUpdate = (data: any) => {
-    switch (data.action) {
-      case 'start':
-        setCurrentQSO({
-          callsign: data.callsign,
-          timestamp: data.timestamp,
-          qrz: data.qrz
-        });
-        break;
-      case 'end':
-        setCurrentQSO(null);
-        break;
-      default:
-        // For unknown actions, refresh the current QSO data
-        refreshCurrentQSO();
-    }
-  };
-
-  const handleSystemStatusUpdate = (data: any) => {
-    setSystemStatus({ active: data.active });
-    if (data.queue_cleared) {
-      setQueue([]);
-    }
-  };
-
-  // WebSocket connection
-  const { isConnected } = useWebSocket({
-    url: getWebSocketUrl(),
-    onMessage: handleWebSocketMessage,
-    onConnect: () => {
-      console.log('Connected to Pileup Buster WebSocket');
-      setError(null);
-    },
-    onDisconnect: () => {
-      console.log('Disconnected from Pileup Buster WebSocket');
-    },
-    onError: (error) => {
-      console.error('WebSocket error:', error);
-      setError('WebSocket connection error');
-    },
-  });
-
-  // API calls
   const refreshData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -166,12 +79,98 @@ export function usePileupBuster(): UsePileupBusterReturn {
     }
   }, []);
 
-  const refreshCurrentQSO = useCallback(async () => {
-    const result = await apiService.getCurrentQSO();
-    if (result.data !== undefined) {
-      setCurrentQSO(result.data);
+  // Handle WebSocket messages
+  const handleQueueUpdate = useCallback((data: Record<string, unknown>) => {
+    switch (data.action) {
+      case 'add':
+        // Add new callsign to queue
+        setQueue(prev => [...prev, {
+          callsign: String(data.callsign || ''),
+          timestamp: String(data.timestamp || ''),
+          position: Number(data.position) || prev.length + 1
+        }]);
+        break;
+      case 'remove':
+        // Remove callsign from queue
+        setQueue(prev => prev.filter(entry => entry.callsign !== data.callsign));
+        break;
+      case 'clear':
+        // Clear the entire queue
+        setQueue([]);
+        break;
+      case 'next':
+        // Remove the next callsign (it moved to QSO)
+        setQueue(prev => prev.filter(entry => entry.callsign !== data.callsign));
+        break;
+      default:
+        // For unknown actions, refresh the data
+        refreshData();
+    }
+  }, [refreshData]);
+
+  const handleQSOUpdate = useCallback((data: Record<string, unknown>) => {
+    switch (data.action) {
+      case 'start':
+        setCurrentQSO({
+          callsign: String(data.callsign || ''),
+          timestamp: String(data.timestamp || ''),
+          qrz: data.qrz as { name?: string; location?: string; image?: string } | undefined
+        });
+        break;
+      case 'end':
+        setCurrentQSO(null);
+        break;
+      default:
+        // For unknown actions, refresh the current QSO data
+        refreshCurrentQSO();
+    }
+  }, [refreshCurrentQSO]);
+
+  const handleSystemStatusUpdate = useCallback((data: Record<string, unknown>) => {
+    setSystemStatus({ active: Boolean(data.active) });
+    if (data.queue_cleared) {
+      setQueue([]);
     }
   }, []);
+
+  const handleWebSocketMessage = useCallback((message: WebSocketMessage) => {
+    console.log('Received WebSocket message:', message);
+
+    switch (message.type) {
+      case 'queue_update':
+        handleQueueUpdate(message.data);
+        break;
+      case 'qso_update':
+        handleQSOUpdate(message.data);
+        break;
+      case 'system_status_update':
+        handleSystemStatusUpdate(message.data);
+        break;
+      case 'connection':
+      case 'heartbeat':
+        // Connection/heartbeat messages don't need special handling
+        break;
+      default:
+        console.log('Unknown WebSocket message type:', message.type);
+    }
+  }, [handleQueueUpdate, handleQSOUpdate, handleSystemStatusUpdate]);
+
+  // WebSocket connection
+  const { isConnected } = useWebSocket({
+    url: getWebSocketUrl(),
+    onMessage: handleWebSocketMessage,
+    onConnect: () => {
+      console.log('Connected to Pileup Buster WebSocket');
+      setError(null);
+    },
+    onDisconnect: () => {
+      console.log('Disconnected from Pileup Buster WebSocket');
+    },
+    onError: (error) => {
+      console.error('WebSocket error:', error);
+      setError('WebSocket connection error');
+    },
+  });
 
   const registerCallsign = useCallback(async (callsign: string): Promise<boolean> => {
     const result = await apiService.registerCallsign(callsign.trim().toUpperCase());

@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 export interface WebSocketMessage {
   type: string;
   timestamp: string;
-  data: any;
+  data: Record<string, unknown>;
 }
 
 export interface UseWebSocketOptions {
@@ -18,7 +18,7 @@ export interface UseWebSocketOptions {
 
 export interface UseWebSocketReturn {
   isConnected: boolean;
-  sendMessage: (message: any) => void;
+  sendMessage: (message: Record<string, unknown>) => void;
   lastMessage: WebSocketMessage | null;
   connectionAttempts: number;
 }
@@ -99,7 +99,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
     }
   }, []);
 
-  const sendMessage = useCallback((message: any) => {
+  const sendMessage = useCallback((message: Record<string, unknown>) => {
     if (ws.current?.readyState === WebSocket.OPEN) {
       try {
         ws.current.send(JSON.stringify(message));
