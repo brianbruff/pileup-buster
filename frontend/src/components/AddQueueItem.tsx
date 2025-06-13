@@ -1,24 +1,39 @@
 import { useState } from 'react'
 
 export interface AddQueueItemProps {
-  onAddCallsign: (callsign: string) => void
+  onAddCallsign: (callsign: string) => Promise<boolean>
 }
 
 export default function AddQueueItem({ onAddCallsign }: AddQueueItemProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [callsign, setCallsign] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleClick = () => {
     setIsEditing(true)
   }
 
+  const handleSubmit = async () => {
+    if (!callsign.trim() || isSubmitting) return
+    
+    setIsSubmitting(true)
+    try {
+      const success = await onAddCallsign(callsign.trim().toUpperCase())
+      if (success) {
+        setCallsign('')
+        setIsEditing(false)
+      }
+      // If unsuccessful, keep the input open so user can try again
+    } catch (error) {
+      console.error('Error adding callsign:', error)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      if (callsign.trim()) {
-        onAddCallsign(callsign.trim().toUpperCase())
-        setCallsign('')
-      }
-      setIsEditing(false)
+      handleSubmit()
     } else if (e.key === 'Escape') {
       setCallsign('')
       setIsEditing(false)
@@ -26,8 +41,11 @@ export default function AddQueueItem({ onAddCallsign }: AddQueueItemProps) {
   }
 
   const handleBlur = () => {
-    setCallsign('')
-    setIsEditing(false)
+    // Don't close if we're submitting
+    if (!isSubmitting) {
+      setCallsign('')
+      setIsEditing(false)
+    }
   }
 
   return (
@@ -39,10 +57,11 @@ export default function AddQueueItem({ onAddCallsign }: AddQueueItemProps) {
           onChange={(e) => setCallsign(e.target.value)}
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
-          placeholder="CALLSIGN"
+          placeholder={isSubmitting ? "Adding..." : "CALLSIGN"}
           className="callsign-input"
           autoFocus
           maxLength={10}
+          disabled={isSubmitting}
         />
       ) : (
         <div className="add-icon">➕</div>
