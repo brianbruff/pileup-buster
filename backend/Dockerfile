@@ -40,13 +40,10 @@ COPY . .
 RUN poetry config virtualenvs.create false \
     && poetry install --no-interaction --no-ansi
 
-# Install Playwright and Chromium
-RUN pip install playwright \
-    && playwright install chromium \
-    && playwright install-deps chromium
-
-# Set environment variables for Playwright
-ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+# Install Playwright browsers using Poetry's Python environment
+# This ensures we use the same Python that Poetry is managing
+RUN poetry run playwright install chromium \
+    && poetry run playwright install-deps chromium
 
 # Expose port
 EXPOSE 8000
