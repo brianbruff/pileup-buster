@@ -1,0 +1,270 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pileup Buster Status</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background-color: #ffffff;
+            padding: 30px;
+            text-align: center;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .header-logo {
+            max-height: 80px;
+            max-width: 300px;
+            height: auto;
+            width: auto;
+            margin-bottom: 15px;
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3748;
+        }
+        .timestamp {
+            opacity: 0.7;
+            font-size: 0.9rem;
+            color: #718096;
+        }
+        .status-banner {
+            background-color: #28a745;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 0;
+        }
+        .content {
+            padding: 30px;
+        }
+        .current-user-section, .queue-section {
+            margin-bottom: 30px;
+        }
+        .current-user-section h2, .queue-section h2 {
+            color: #4a5568;
+            margin: 0 0 15px 0;
+            font-size: 1.3rem;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 5px;
+        }
+        .current-user-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .callsign {
+            font-size: 1.8rem;
+            font-weight: bold;
+            min-width: 120px;
+        }
+        .user-details .name {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+        .user-details .dxcc {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        .no-current-user, .no-queue {
+            text-align: center;
+            padding: 30px;
+            color: #718096;
+            font-style: italic;
+            background-color: #f7fafc;
+            border-radius: 8px;
+            border: 2px dashed #e2e8f0;
+        }
+        .queue-list {
+            background-color: #f7fafc;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .queue-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+            gap: 15px;
+        }
+        .queue-item:last-child {
+            border-bottom: none;
+        }
+        .queue-item.more-users {
+            background-color: #edf2f7;
+            font-style: italic;
+            color: #718096;
+        }
+        .position {
+            font-weight: bold;
+            color: #4a5568;
+            min-width: 30px;
+        }
+        .queue-callsign {
+            font-weight: 600;
+            color: #2d3748;
+            min-width: 80px;
+        }
+        .queue-name {
+            color: #718096;
+        }
+        .link-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .frontend-link {
+            display: inline-block;
+            background: linear-gradient(135deg, #28a745 0%, #28a745dd 100%);
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .frontend-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        .note {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #ebf8ff;
+            border-left: 4px solid #3182ce;
+            border-radius: 0 8px 8px 0;
+            color: #2c5282;
+            font-size: 0.95rem;
+        }
+        .status-details {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f7fafc;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #4a5568;
+        }
+        .status-details strong {
+            color: #2d3748;
+        }
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 8px;
+            }
+            .header {
+                padding: 20px;
+            }
+            .header-logo {
+                max-height: 60px;
+                max-width: 250px;
+            }
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            .content {
+                padding: 20px;
+            }
+            .current-user-card {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+            .queue-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="http://localhost:3000/src/assets/logo.png" alt="Pileup Buster Logo" class="header-logo" onerror="this.style.display='none';">
+            <h1>Pileup Buster Status</h1>
+            <div class="timestamp">Last updated: 2024-06-14 12:00:00 UTC</div>
+        </div>
+        
+        <div class="status-banner active">
+            System Status: ACTIVE
+        </div>
+        
+        <div class="content">
+            
+        <div class="current-user-section">
+            <h2>Currently Working</h2>
+            <div class="current-user-card">
+                <div class="callsign">W1ABC</div>
+                <div class="user-details">
+                    <div class="name">John Doe</div>
+                    <div class="dxcc">United States</div>
+                </div>
+            </div>
+        </div>
+            
+            
+        <div class="queue-section">
+            <h2>Queue (2 users)</h2>
+            <div class="queue-list">
+                
+            <div class="queue-item">
+                <div class="position">#1</div>
+                <div class="queue-callsign">W2DEF</div>
+                <div class="queue-name">Jane Smith</div>
+            </div>
+            <div class="queue-item">
+                <div class="position">#2</div>
+                <div class="queue-callsign">VK3GHI</div>
+                <div class="queue-name">Bob Johnson</div>
+            </div>
+            </div>
+        </div>
+            
+            <div class="link-container">
+                <a href="http://localhost:3000" class="frontend-link" target="_blank">
+                    🚀 Visit Pileup Buster (ACTIVE)
+                </a>
+            </div>
+            
+            <div class="note">
+                <strong>📻 Welcome to Pileup Buster!</strong><br>
+                This page shows the current status of the ham radio queue management system. 
+                Click the link above to access the live application and join the queue.
+            </div>
+            
+            <div class="status-details">
+                <strong>System Status:</strong> ACTIVE<br>
+                <strong>Current QSO:</strong> W1ABC<br>
+                <strong>Queue Length:</strong> 2 users<br>
+                <strong>Last Status Update:</strong> 2024-06-14T12:00:00<br>
+                <strong>Page Generated:</strong> 2024-06-14 12:00:00 UTC
+            </div>
+        </div>
+    </div>
+</body>
+</html>

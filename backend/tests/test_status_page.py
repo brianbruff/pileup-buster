@@ -1,5 +1,5 @@
 """
-Tests for the status page endpoint with screenshot functionality
+Tests for the optimized status page endpoint without screenshots
 """
 import pytest
 from unittest.mock import Mock, patch
@@ -25,11 +25,32 @@ class TestStatusPageEndpoint:
             'active': True, 
             'last_updated': '2024-01-01T12:00:00'
         }
+        mock_current_qso = {
+            'callsign': 'W1ABC',
+            'qrz': {
+                'name': 'John Doe',
+                'dxcc_name': 'United States'
+            }
+        }
+        mock_queue = [
+            {
+                'callsign': 'W2DEF',
+                'position': 1,
+                'qrz': {'name': 'Jane Smith'}
+            },
+            {
+                'callsign': 'W3GHI',
+                'position': 2,
+                'qrz': {'name': 'Bob Johnson'}
+            }
+        ]
         
-        with patch('app.services.screenshot.capture_screenshot') as mock_screenshot, \
-             patch('app.database.queue_db.get_system_status') as mock_get_status:
-            mock_screenshot.return_value = 'mock_base64_image_data'
+        with patch('app.database.queue_db.get_system_status') as mock_get_status, \
+             patch('app.database.queue_db.get_current_qso') as mock_get_qso, \
+             patch('app.database.queue_db.get_queue_list') as mock_get_queue:
             mock_get_status.return_value = mock_status
+            mock_get_qso.return_value = mock_current_qso
+            mock_get_queue.return_value = mock_queue
             
             response = test_client.get('/status')
             
@@ -38,9 +59,12 @@ class TestStatusPageEndpoint:
             
             content = response.text
             assert 'Pileup Buster Status' in content
-            assert 'mock_base64_image_data' in content
-            assert 'Go to Pileup Buster Frontend' in content
+            assert 'Visit Pileup Buster' in content
             assert 'ACTIVE' in content
+            assert 'W1ABC' in content  # Current QSO
+            assert 'John Doe' in content  # Current QSO name
+            assert 'W2DEF' in content  # Queue user
+            assert 'Jane Smith' in content  # Queue user name
     
     def test_get_status_page_with_custom_frontend_url(self, test_client):
         """Test status page with custom frontend URL from environment"""
@@ -50,11 +74,13 @@ class TestStatusPageEndpoint:
             'last_updated': '2024-01-01T12:00:00'
         }
         
-        with patch('app.services.screenshot.capture_screenshot') as mock_screenshot, \
-             patch('app.database.queue_db.get_system_status') as mock_get_status:
+        with patch('app.database.queue_db.get_system_status') as mock_get_status, \
+             patch('app.database.queue_db.get_current_qso') as mock_get_qso, \
+             patch('app.database.queue_db.get_queue_list') as mock_get_queue:
             with patch.dict(os.environ, {'FRONTEND_URL': custom_url}):
-                mock_screenshot.return_value = 'mock_base64_image_data'
                 mock_get_status.return_value = mock_status
+                mock_get_qso.return_value = None
+                mock_get_queue.return_value = []
                 
                 response = test_client.get('/status')
                 
@@ -62,35 +88,31 @@ class TestStatusPageEndpoint:
                 content = response.text
                 assert custom_url in content
                 assert 'INACTIVE' in content
-                
-                # Verify screenshot was called with custom URL
-                mock_screenshot.assert_called_once_with(custom_url)
     
-    def test_get_status_page_screenshot_failure(self, test_client):
-        """Test status page when screenshot capture fails"""
+    def test_get_status_page_no_current_qso(self, test_client):
+        """Test status page when no current QSO is active"""
         mock_status = {
             'active': True, 
             'last_updated': '2024-01-01T12:00:00'
         }
         
-        with patch('app.services.screenshot.capture_screenshot') as mock_screenshot, \
-             patch('app.database.queue_db.get_system_status') as mock_get_status:
-            mock_screenshot.return_value = None  # Simulate failure
+        with patch('app.database.queue_db.get_system_status') as mock_get_status, \
+             patch('app.database.queue_db.get_current_qso') as mock_get_qso, \
+             patch('app.database.queue_db.get_queue_list') as mock_get_queue:
             mock_get_status.return_value = mock_status
+            mock_get_qso.return_value = None
+            mock_get_queue.return_value = []
             
             response = test_client.get('/status')
             
-            # Status page should still work without screenshot
             assert response.status_code == 200
             content = response.text
-            assert 'Screenshot not available' in content
+            assert 'No active QSO' in content
             assert 'ACTIVE' in content
     
     def test_get_status_page_exception_handling(self, test_client):
         """Test status page exception handling"""
-        with patch('app.services.screenshot.capture_screenshot') as mock_screenshot, \
-             patch('app.database.queue_db.get_system_status') as mock_get_status:
-            mock_screenshot.side_effect = Exception("Screenshot service error")
+        with patch('app.database.queue_db.get_system_status') as mock_get_status:
             mock_get_status.side_effect = Exception("Database error")
             
             response = test_client.get('/status')
@@ -107,18 +129,19 @@ class TestStatusPageEndpoint:
             'last_updated': '2024-01-01T12:00:00'
         }
         
-        with patch('app.services.screenshot.capture_screenshot') as mock_screenshot, \
-             patch('app.database.queue_db.get_system_status') as mock_get_status:
+        with patch('app.database.queue_db.get_system_status') as mock_get_status, \
+             patch('app.database.queue_db.get_current_qso') as mock_get_qso, \
+             patch('app.database.queue_db.get_queue_list') as mock_get_queue:
             with patch.dict(os.environ, {}, clear=True):  # Clear environment
-                mock_screenshot.return_value = 'mock_base64_image_data'
                 mock_get_status.return_value = mock_status
+                mock_get_qso.return_value = None
+                mock_get_queue.return_value = []
                 
                 response = test_client.get('/status')
                 
                 assert response.status_code == 200
-                
-                # Verify screenshot was called with default URL
-                mock_screenshot.assert_called_once_with('https://briankeating.net/pileup-buster')
+                content = response.text
+                assert 'https://briankeating.net/pileup-buster' in content
     
     def test_get_status_page_no_authentication_required(self, test_client):
         """Test that status page endpoint does not require authentication"""
@@ -127,10 +150,12 @@ class TestStatusPageEndpoint:
             'last_updated': '2024-01-01T12:00:00'
         }
         
-        with patch('app.services.screenshot.capture_screenshot') as mock_screenshot, \
-             patch('app.database.queue_db.get_system_status') as mock_get_status:
-            mock_screenshot.return_value = 'mock_base64_image_data'
+        with patch('app.database.queue_db.get_system_status') as mock_get_status, \
+             patch('app.database.queue_db.get_current_qso') as mock_get_qso, \
+             patch('app.database.queue_db.get_queue_list') as mock_get_queue:
             mock_get_status.return_value = mock_status
+            mock_get_qso.return_value = None
+            mock_get_queue.return_value = []
             
             # Make request without any authentication
             response = test_client.get('/status')
@@ -143,11 +168,17 @@ class TestStatusPageEndpoint:
             'active': True, 
             'last_updated': '2024-01-01T12:00:00'
         }
+        mock_current_qso = {
+            'callsign': 'W1ABC',
+            'qrz': {'name': 'John Doe', 'dxcc_name': 'United States'}
+        }
         
-        with patch('app.services.screenshot.capture_screenshot') as mock_screenshot, \
-             patch('app.database.queue_db.get_system_status') as mock_get_status:
-            mock_screenshot.return_value = 'mock_base64_image_data'
+        with patch('app.database.queue_db.get_system_status') as mock_get_status, \
+             patch('app.database.queue_db.get_current_qso') as mock_get_qso, \
+             patch('app.database.queue_db.get_queue_list') as mock_get_queue:
             mock_get_status.return_value = mock_status
+            mock_get_qso.return_value = mock_current_qso
+            mock_get_queue.return_value = []
             
             response = test_client.get('/status')
             
@@ -158,12 +189,12 @@ class TestStatusPageEndpoint:
             assert '<html' in content
             assert '<head>' in content
             assert '<title>Pileup Buster Status</title>' in content
-            assert '<img' in content
-            assert 'data:image/png;base64,mock_base64_image_data' in content
             assert '<a href=' in content
-            assert 'Go to Pileup Buster Frontend' in content
+            assert 'Visit Pileup Buster' in content
             assert 'System Status: ACTIVE' in content
             assert 'Last updated:' in content
+            assert 'Currently Working' in content
+            assert 'Queue' in content
     
     def test_get_status_page_inactive_system(self, test_client):
         """Test status page displays inactive system status correctly"""
@@ -172,10 +203,12 @@ class TestStatusPageEndpoint:
             'last_updated': '2024-01-01T12:00:00'
         }
         
-        with patch('app.services.screenshot.capture_screenshot') as mock_screenshot, \
-             patch('app.database.queue_db.get_system_status') as mock_get_status:
-            mock_screenshot.return_value = None  # No screenshot
+        with patch('app.database.queue_db.get_system_status') as mock_get_status, \
+             patch('app.database.queue_db.get_current_qso') as mock_get_qso, \
+             patch('app.database.queue_db.get_queue_list') as mock_get_queue:
             mock_get_status.return_value = mock_status
+            mock_get_qso.return_value = None
+            mock_get_queue.return_value = []
             
             response = test_client.get('/status')
             
@@ -184,29 +217,70 @@ class TestStatusPageEndpoint:
             
             # Verify inactive status is displayed
             assert 'System Status: INACTIVE' in content
-            assert 'Go to Pileup Buster Frontend (INACTIVE)' in content
+            assert 'Visit Pileup Buster (INACTIVE)' in content
             assert '#dc3545' in content  # Red color for inactive
-            assert 'Screenshot not available' in content
 
-    def test_get_status_page_active_system_with_screenshot(self, test_client):
-        """Test status page displays active system status with screenshot"""
+    def test_get_status_page_active_system_with_queue(self, test_client):
+        """Test status page displays active system status with queue"""
         mock_status = {
             'active': True, 
             'last_updated': '2024-01-01T12:00:00'
         }
+        mock_queue = [
+            {'callsign': 'W1ABC', 'position': 1, 'qrz': {'name': 'Alice'}},
+            {'callsign': 'W2DEF', 'position': 2, 'qrz': {'name': 'Bob'}},
+            {'callsign': 'W3GHI', 'position': 3, 'qrz': {'name': 'Charlie'}}
+        ]
         
-        with patch('app.services.screenshot.capture_screenshot') as mock_screenshot, \
-             patch('app.database.queue_db.get_system_status') as mock_get_status:
-            mock_screenshot.return_value = 'screenshot_data'
+        with patch('app.database.queue_db.get_system_status') as mock_get_status, \
+             patch('app.database.queue_db.get_current_qso') as mock_get_qso, \
+             patch('app.database.queue_db.get_queue_list') as mock_get_queue:
             mock_get_status.return_value = mock_status
+            mock_get_qso.return_value = None
+            mock_get_queue.return_value = mock_queue
             
             response = test_client.get('/status')
             
             assert response.status_code == 200
             content = response.text
             
-            # Verify active status is displayed
+            # Verify active status and queue are displayed
             assert 'System Status: ACTIVE' in content
-            assert 'Go to Pileup Buster Frontend (ACTIVE)' in content
+            assert 'Visit Pileup Buster (ACTIVE)' in content
             assert '#28a745' in content  # Green color for active
-            assert 'data:image/png;base64,screenshot_data' in content
+            assert 'Queue (3 users)' in content
+            assert 'W1ABC' in content
+            assert 'Alice' in content
+            assert '#1' in content  # Position indicator
+
+    def test_get_status_page_large_queue_truncation(self, test_client):
+        """Test status page truncates large queues properly"""
+        mock_status = {
+            'active': True, 
+            'last_updated': '2024-01-01T12:00:00'
+        }
+        # Create a queue with 15 users
+        mock_queue = []
+        for i in range(15):
+            mock_queue.append({
+                'callsign': f'W{i}ABC',
+                'position': i + 1,
+                'qrz': {'name': f'User {i}'}
+            })
+        
+        with patch('app.database.queue_db.get_system_status') as mock_get_status, \
+             patch('app.database.queue_db.get_current_qso') as mock_get_qso, \
+             patch('app.database.queue_db.get_queue_list') as mock_get_queue:
+            mock_get_status.return_value = mock_status
+            mock_get_qso.return_value = None
+            mock_get_queue.return_value = mock_queue
+            
+            response = test_client.get('/status')
+            
+            assert response.status_code == 200
+            content = response.text
+            
+            # Should show queue count and truncation message
+            assert 'Queue (15 users)' in content
+            assert '+5 more' in content  # Shows remaining users after 10
+            assert 'users in queue' in content
