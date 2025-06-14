@@ -29,6 +29,28 @@ async def capture_screenshot_with_playwright(url: str) -> Optional[str]:
             browser = await p.chromium.launch(headless=True)
             page = await browser.new_page()
             await page.goto(url, timeout=30000)
+            
+            # Wait for page to fully load and populate data
+            try:
+                # Wait for the main content to be visible first
+                await page.wait_for_selector('.main-content', timeout=10000)
+                
+                # Then wait for either an active callsign or the "No active callsign" message
+                # This ensures the current QSO section has loaded
+                await page.wait_for_selector('.current-active-section .active-callsign, .current-active-section .active-name', timeout=10000)
+                
+                # Wait for the queue section to be populated
+                # Look for either queue items or the add button (which appears when queue is loaded)
+                await page.wait_for_selector('.queue-container .callsign-card, .queue-container .add-queue-item', timeout=10000)
+                
+                # Give a small additional delay to ensure all rendering is complete
+                await asyncio.sleep(2)
+                
+            except Exception as e:
+                logger.warning(f"Element wait timeout, proceeding with screenshot: {e}")
+                # Fallback to a longer sleep if element waiting fails
+                await asyncio.sleep(5)
+            
             screenshot_bytes = await page.screenshot(type='png', full_page=True)
             await browser.close()
             
@@ -60,9 +82,43 @@ def _capture_screenshot_with_selenium_sync(url: str) -> Optional[str]:
         driver = webdriver.Chrome(options=chrome_options)
         driver.get(url)
         
-        # Wait a moment for page to load
+        # Wait longer for page to load and API calls to complete
+        # This ensures the active callsign and queue are populated
         import time
-        time.sleep(2)
+        from selenium.webdriver.common.by import By
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
+        
+        try:
+            # Wait for main content to load
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "main-content"))
+            )
+            
+            # Wait for current active section to show either active callsign or "No active callsign"
+            WebDriverWait(driver, 10).until(
+                EC.any_of(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, ".current-active-section .active-callsign")),
+                    EC.text_to_be_present_in_element((By.CSS_SELECTOR, ".current-active-section .active-name"), "Waiting for next QSO")
+                )
+            )
+            
+            # Wait for queue container to show content (either queue items or add button)
+            WebDriverWait(driver, 10).until(
+                EC.any_of(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, ".queue-container .callsign-card")),
+                    EC.presence_of_element_located((By.CSS_SELECTOR, ".queue-container .add-queue-item"))
+                )
+            )
+            
+            # Small additional delay for final rendering
+            time.sleep(2)
+            
+        except Exception as e:
+            # If element waiting fails, fall back to a longer sleep
+            import logging
+            logging.getLogger(__name__).warning(f"Selenium element wait failed, using fallback delay: {e}")
+            time.sleep(5)
         
         screenshot_b64 = driver.get_screenshot_as_base64()
         driver.quit()
