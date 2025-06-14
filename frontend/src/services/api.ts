@@ -8,6 +8,7 @@ export interface QueueEntry {
     callsign?: string
     name?: string
     address?: string
+    dxcc_name?: string
     image?: string
     error?: string
   }
@@ -19,6 +20,7 @@ export interface CurrentQsoData {
   qrz?: {
     name?: string
     address?: string
+    dxcc_name?: string
     image?: string
     url?: string
   }

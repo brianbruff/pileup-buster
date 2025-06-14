@@ -80,6 +80,7 @@ class QueueDatabase:
                 'callsign': callsign,
                 'name': None,
                 'address': None,
+                'dxcc_name': None,
                 'image': None,
                 'error': 'QRZ information not available'
             }
@@ -264,6 +265,7 @@ class QueueDatabase:
                 'callsign': entry.get("callsign"),
                 'name': None,
                 'address': None,
+                'dxcc_name': None,
                 'image': None,
                 'error': 'QRZ information not available'
             })
@@ -285,6 +287,7 @@ class QueueDatabase:
                 'callsign': callsign,
                 'name': None,
                 'address': None,
+                'dxcc_name': None,
                 'image': None,
                 'error': 'QRZ information not available'
             }
@@ -320,6 +323,7 @@ class QueueDatabase:
                 'callsign': entry.get("callsign"),
                 'name': None,
                 'address': None,
+                'dxcc_name': None,
                 'image': None,
                 'error': 'QRZ information not available'
             })

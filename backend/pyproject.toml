@@ -15,6 +15,7 @@ dnspython = "^2.4.2"
 httpx = "^0.25.2"
 callsignlookuptools = "^1.1.1"
 requests = "^2.32.4"
+playwright = "^1.40.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"

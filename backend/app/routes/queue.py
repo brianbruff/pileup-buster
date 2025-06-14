@@ -4,7 +4,10 @@ from datetime import datetime
 from typing import List, Dict, Any
 from app.services.qrz import qrz_service
 from app.database import queue_db
+from app.validation import validate_callsign
+from app.services.events import event_broadcaster
 import logging
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -32,12 +35,15 @@ class QueueEntry(BaseModel):
     position: int
 
 @queue_router.post('/register')
-def register_callsign(request: CallsignRequest):
+async def register_callsign(request: CallsignRequest):
     """Register a callsign in the queue"""
     callsign = request.callsign.upper().strip()
     
     if not callsign:
         raise HTTPException(status_code=400, detail='Callsign is required')
+    
+    if not validate_callsign(callsign):
+        raise HTTPException(status_code=400, detail='Invalid callsign format. Must follow ITU standards (e.g., KC1ABC, W1AW)')
     
     try:
         # Check if system is active before allowing registration
@@ -50,6 +56,18 @@ def register_callsign(request: CallsignRequest):
         
         # Register callsign with QRZ information
         entry = queue_db.register_callsign(callsign, qrz_info)
+        
+        # Broadcast updated queue
+        try:
+            queue_list = queue_db.get_queue_list()
+            await event_broadcaster.broadcast_queue_update({
+                'queue': queue_list, 
+                'total': len(queue_list), 
+                'system_active': True
+            })
+        except Exception as e:
+            logger.warning(f"Failed to broadcast queue update event: {e}")
+        
         return {'message': 'Callsign registered successfully', 'entry': entry}
     except HTTPException:
         raise  # Re-raise HTTP exceptions (like system inactive)

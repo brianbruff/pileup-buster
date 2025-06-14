@@ -7,6 +7,7 @@ export interface QueueItemData {
     callsign?: string
     name?: string
     address?: string
+    dxcc_name?: string
     image?: string
     error?: string
   }

@@ -57,6 +57,7 @@ class QRZService:
                 'callsign': callsign,
                 'name': result.name.formatted_name,
                 'address': self._format_address(result.address),
+                'dxcc_name': result.dxcc.name if hasattr(result, 'dxcc') and result.dxcc else None,
                 'image': result.image.url if hasattr(result, 'image') and result.image else None,
                 'error': None
             }
@@ -68,6 +69,7 @@ class QRZService:
                 'callsign': callsign,
                 'name': None,
                 'address': None,
+                'dxcc_name': None,
                 'error': str(e)
             }
     

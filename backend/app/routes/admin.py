@@ -2,6 +2,11 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from app.database import queue_db
 from app.auth import verify_admin_credentials
+from app.services.events import event_broadcaster
+import asyncio
+import logging
+
+logger = logging.getLogger(__name__)
 
 admin_router = APIRouter()
 
@@ -52,7 +57,7 @@ def clear_queue(username: str = Depends(verify_admin_credentials)):
         raise HTTPException(status_code=500, detail=f'Database error: {str(e)}')
 
 @admin_router.post('/queue/next')
-def next_callsign(username: str = Depends(verify_admin_credentials)):
+async def next_callsign(username: str = Depends(verify_admin_credentials)):
     """Process the next callsign in queue and manage QSO status"""
     try:
         # Clear any existing current QSO
@@ -63,6 +68,11 @@ def next_callsign(username: str = Depends(verify_admin_credentials)):
         
         if not next_entry:
             # If no one is in queue, return None for current_qso
+            # Broadcast that current QSO is now None
+            try:
+                await event_broadcaster.broadcast_current_qso(None)
+            except Exception as e:
+                logger.warning(f"Failed to broadcast current QSO event: {e}")
             return None
         
         # Put the next callsign into QSO status with stored QRZ information
@@ -75,6 +85,20 @@ def next_callsign(username: str = Depends(verify_admin_credentials)):
         })
         new_qso = queue_db.set_current_qso(next_entry["callsign"], qrz_info)
         
+        # Broadcast the new current QSO
+        try:
+            await event_broadcaster.broadcast_current_qso(new_qso)
+            
+            # Broadcast updated queue (since someone was removed)
+            queue_list = queue_db.get_queue_list()
+            await event_broadcaster.broadcast_queue_update({
+                'queue': queue_list, 
+                'total': len(queue_list), 
+                'system_active': True
+            })
+        except Exception as e:
+            logger.warning(f"Failed to broadcast SSE events: {e}")
+        
         return new_qso
         
     except HTTPException:
@@ -83,7 +107,7 @@ def next_callsign(username: str = Depends(verify_admin_credentials)):
         raise HTTPException(status_code=500, detail=f'Database error: {str(e)}')
 
 @admin_router.post('/status')
-def set_system_status(
+async def set_system_status(
     request: SystemStatusRequest, 
     username: str = Depends(verify_admin_credentials)
 ):
@@ -100,6 +124,23 @@ def set_system_status(
         if qso_cleared:
             message_parts.append('Current QSO cleared')
         message = '. '.join(message_parts)
+        
+        # Broadcast system status change
+        try:
+            await event_broadcaster.broadcast_system_status({
+                'active': request.active
+            })
+            
+            # If system was deactivated, also broadcast empty queue and no current QSO
+            if not request.active:
+                await event_broadcaster.broadcast_current_qso(None)
+                await event_broadcaster.broadcast_queue_update({
+                    'queue': [], 
+                    'total': 0, 
+                    'system_active': False
+                })
+        except Exception as e:
+            logger.warning(f"Failed to broadcast system status events: {e}")
         
         return {
             'message': message,

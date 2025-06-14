@@ -186,7 +186,10 @@ class TestSystemActivationQueueIntegration:
         
         assert response.status_code == 200
         assert response.json()['message'] == 'Callsign registered successfully'
-        mock_db.register_callsign.assert_called_once_with('KC1ABC')
+        
+        # Verify register_callsign was called with callsign and QRZ info
+        args, kwargs = mock_db.register_callsign.call_args
+        assert args[0] == 'KC1ABC'  # First argument is callsign
     
     def test_register_callsign_when_system_inactive(self, test_client):
         """Test that callsign registration fails when system is inactive"""
@@ -201,7 +204,10 @@ class TestSystemActivationQueueIntegration:
         
         assert response.status_code == 400
         assert 'System is currently inactive' in response.json()['detail']
-        mock_db.register_callsign.assert_called_once_with('KC1ABC')
+        
+        # Verify register_callsign was called with callsign and QRZ info
+        args, kwargs = mock_db.register_callsign.call_args
+        assert args[0] == 'KC1ABC'  # First argument is callsign
 
 
 class TestDatabaseSystemStatus:

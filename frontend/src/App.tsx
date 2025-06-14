@@ -8,6 +8,7 @@ import AdminSection from './components/AdminSection'
 import { type QueueItemData } from './components/QueueItem'
 import { apiService, type CurrentQsoData, type QueueEntry, ApiError } from './services/api'
 import { adminApiService } from './services/adminApi'
+import { sseService, type StateChangeEvent } from './services/sse'
 
 function App() {
   // Real data state
@@ -24,7 +25,7 @@ function App() {
   const convertQueueEntryToItemData = (entry: QueueEntry): QueueItemData => {
     return {
       callsign: entry.callsign,
-      location: entry.qrz?.address || 'Location not available',
+      location: entry.qrz?.dxcc_name || entry.qrz?.address || 'Location not available',
       qrz: entry.qrz
     }
   }
@@ -34,7 +35,7 @@ function App() {
     return {
       callsign: qso.callsign,
       name: qso.qrz?.name || 'Name not available',
-      location: qso.qrz?.address || 'Location not available'
+      location: qso.qrz?.dxcc_name || qso.qrz?.address || 'Location not available'
     }
   }
 
@@ -109,22 +110,79 @@ function App() {
     loadSystemStatus()
   }, [])
 
-  // Polling for real-time updates
+  // Real-time updates via Server-Sent Events (SSE)
   useEffect(() => {
-    const interval = setInterval(() => {
-      fetchCurrentQso()
-      fetchQueueList()
-    }, 5000) // Poll every 5 seconds
+    // Event handlers for different types of state changes
+    const handleCurrentQsoEvent = (event: StateChangeEvent) => {
+      console.log('Received current_qso event:', event)
+      setCurrentQso(event.data)
+    }
 
-    return () => clearInterval(interval)
+    const handleQueueUpdateEvent = (event: StateChangeEvent) => {
+      console.log('Received queue_update event:', event)
+      if (event.data?.queue) {
+        const queueItems = event.data.queue.map(convertQueueEntryToItemData)
+        setQueueData(queueItems)
+      }
+    }
+
+    const handleSystemStatusEvent = (event: StateChangeEvent) => {
+      console.log('Received system_status event:', event)
+      if (event.data?.active !== undefined) {
+        setSystemStatus(event.data.active)
+        
+        // Clear error state when system is activated
+        if (event.data.active) {
+          setError(null)
+        }
+      }
+    }
+
+    const handleConnectedEvent = (event: StateChangeEvent) => {
+      console.log('SSE connected:', event)
+      // When SSE connects, fetch initial data
+      Promise.all([
+        fetchCurrentQso(),
+        fetchQueueList()
+      ]).catch(err => {
+        console.error('Failed to fetch initial data after SSE connection:', err)
+      })
+    }
+
+    // Register event listeners
+    sseService.addEventListener('current_qso', handleCurrentQsoEvent)
+    sseService.addEventListener('queue_update', handleQueueUpdateEvent)
+    sseService.addEventListener('system_status', handleSystemStatusEvent)
+    sseService.addEventListener('connected', handleConnectedEvent)
+
+    // Start SSE connection
+    sseService.connect()
+
+    // Fallback polling in case SSE fails (every 30 seconds)
+    const fallbackInterval = setInterval(() => {
+      if (!sseService.isConnected()) {
+        console.log('SSE not connected, using fallback polling')
+        fetchCurrentQso()
+        fetchQueueList()
+      }
+    }, 30000) // Fallback poll every 30 seconds
+
+    // Cleanup on component unmount
+    return () => {
+      sseService.removeEventListener('current_qso', handleCurrentQsoEvent)
+      sseService.removeEventListener('queue_update', handleQueueUpdateEvent)
+      sseService.removeEventListener('system_status', handleSystemStatusEvent)
+      sseService.removeEventListener('connected', handleConnectedEvent)
+      sseService.disconnect()
+      clearInterval(fallbackInterval)
+    }
   }, [fetchCurrentQso, fetchQueueList])
 
   // Handle callsign registration
   const handleCallsignRegistration = async (callsign: string) => {
     try {
       await apiService.registerCallsign(callsign)
-      // Refresh queue data after successful registration
-      await fetchQueueList()
+      // No need to manually refresh - SSE will broadcast the queue update
     } catch (err) {
       if (err instanceof ApiError) {
         console.error('Failed to register callsign:', err.detail || err.message)
@@ -155,18 +213,9 @@ function App() {
 
   const handleToggleSystemStatus = async (active: boolean): Promise<boolean> => {
     try {
-      const newStatus = await adminApiService.setSystemStatus(active)
-      setSystemStatus(newStatus)
-      
-      // Clear error state when system is activated
-      if (active) {
-        setError(null)
-        // Refresh data after activation
-        await Promise.all([
-          fetchCurrentQso(),
-          fetchQueueList()
-        ])
-      }
+      await adminApiService.setSystemStatus(active)
+      // SSE will handle the system status update
+      // No need to manually refresh data - SSE events will handle this
       
       return true
     } catch (error) {
@@ -177,8 +226,7 @@ function App() {
 
   const handleWorkNextUser = async (): Promise<void> => {
     await adminApiService.workNextUser()
-    // Refresh queue data after working next user
-    await fetchQueueList()
+    // No need to manually refresh - SSE will broadcast the updates
   }
 
   return (
