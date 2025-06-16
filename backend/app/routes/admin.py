@@ -5,6 +5,7 @@ from app.auth import verify_admin_credentials
 from app.services.events import event_broadcaster
 import asyncio
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -102,9 +103,11 @@ async def next_callsign(username: str = Depends(verify_admin_credentials)):
             
             # Broadcast updated queue (since someone was removed)
             queue_list = queue_db.get_queue_list()
+            max_queue_size = int(os.getenv('MAX_QUEUE_SIZE', '4'))
             await event_broadcaster.broadcast_queue_update({
                 'queue': queue_list, 
                 'total': len(queue_list), 
+                'max_size': max_queue_size,
                 'system_active': True
             })
         except Exception as e:
@@ -145,9 +148,11 @@ async def set_system_status(
             # If system was deactivated, also broadcast empty queue and no current QSO
             if not request.active:
                 await event_broadcaster.broadcast_current_qso(None)
+                max_queue_size = int(os.getenv('MAX_QUEUE_SIZE', '4'))
                 await event_broadcaster.broadcast_queue_update({
                     'queue': [], 
                     'total': 0, 
+                    'max_size': max_queue_size,
                     'system_active': False
                 })
         except Exception as e:

@@ -28,6 +28,16 @@ class TestCallsignValidation:
             'KC12XY',  # 2 letters + 2 numbers + 2 letters
             'VK21A',   # 2 letters + 2 numbers + 1 letter
             
+            # UK Foundation/Intermediate callsigns (numeric prefix)
+            '2E0JFS',  # Foundation license format
+            '2M0ABC',  # Intermediate license format
+            '2M1DEF',  # Intermediate license format
+            
+            # Special event callsigns (extended suffix)
+            'EI0IRTS', # 2 letters + 1 number + 4 letters
+            'G0ABCD',  # 1 letter + 1 number + 4 letters
+            'W1ABCD',  # 1 letter + 1 number + 4 letters
+            
             # Minimal valid formats
             'W1A',     # 1 letter + 1 number + 1 letter
             'KC1A',    # 2 letters + 1 number + 1 letter
@@ -62,8 +72,7 @@ class TestCallsignValidation:
             'KC123',    # Ends with numbers
             'W1',       # Missing suffix
             
-            # Too many suffix letters
-            'W1ABCD',   # 4+ letters at end
+            # Too many suffix letters (more than 4)
             'KC1DEFGH', # 5+ letters at end
             
             # Too many numbers
@@ -90,12 +99,14 @@ class TestCallsignValidation:
         """Test edge cases for callsign validation"""
         # Test boundary conditions
         assert validate_callsign('A1A')        # Minimum: 1+1+1
-        assert validate_callsign('AB12ABC')     # Maximum: 2+2+3
+        assert validate_callsign('AB12ABCD')    # Maximum traditional: 2+2+4
+        assert validate_callsign('9Z9ABC')      # Maximum UK format: 1+1+1+3
         
         # Test just over boundaries
-        assert not validate_callsign('ABC1A')   # Too many prefix letters
+        assert not validate_callsign('ABC1A')   # Too many prefix letters (3 for traditional)
         assert not validate_callsign('A123A')   # Too many numbers
-        assert not validate_callsign('A1ABCD')  # Too many suffix letters
+        assert not validate_callsign('A1ABCDE') # Too many suffix letters (5+ for traditional)
+        assert not validate_callsign('1ABC9ABC') # Invalid UK format (too many suffix letters)
         
     def test_case_sensitivity(self):
         """Test that validation expects uppercase input"""

@@ -29,6 +29,7 @@ export interface CurrentQsoData {
 export interface QueueListResponse {
   queue: QueueEntry[]
   total: number
+  max_size: number
   system_active: boolean
 }
 
