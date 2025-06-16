@@ -56,6 +56,7 @@
 
 .operator-image-large .operator-image {  
   height: 350px;
+  max-width: 300px;
   border-radius: 8px;
   object-fit: cover;
 }
@@ -81,6 +82,25 @@
   font-weight: bold;
   color: #333;
   margin-bottom: 0.5rem;
+}
+
+.active-callsign-link {
+  text-decoration: none;
+  color: #000000;
+  transition: color 0.2s ease;
+  border-bottom: 1px dotted #646cff;
+  cursor: pointer;
+}
+
+.active-callsign-link:hover {
+  color: #646cff;
+  text-decoration: underline;
+  border-bottom: none;
+}
+
+.active-callsign-link:visited {
+  color: #000000;
+  border-bottom: 1px dotted #646cff;
 }
 
 .active-name {
@@ -274,6 +294,12 @@
   font-weight: normal;
 }
 
+.button-group {
+  display: flex;
+  gap: 1rem;
+  flex: 1;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .header {
@@ -319,6 +345,26 @@
   
   .entry-form-section {
     margin: 1rem;
+  }
+}
+
+/* Medium screens: stack admin controls when space is tight */
+@media (max-width: 1024px) {
+  .admin-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.2rem;
+  }
+  
+  .button-group {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .queue-control,
+  .complete-control,
+  .system-status-control {
+    justify-content: center;
   }
 }
 
@@ -502,13 +548,18 @@
 
 .admin-controls {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
   gap: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .system-status-control {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
 }
 
 .status-toggle-label {
@@ -598,7 +649,8 @@
   color: #dc3545;
 }
 
-.queue-control {
+.queue-control,
+.complete-control {
   display: flex;
   justify-content: flex-start;
 }
@@ -624,6 +676,27 @@
   cursor: not-allowed;
 }
 
+.complete-qso-button {
+  background-color: #fd7e14;
+  color: #fff;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 5px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.complete-qso-button:hover:not(:disabled) {
+  background-color: #e8590c;
+}
+
+.complete-qso-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
   .admin-login-form {
     position: fixed;
@@ -636,7 +709,20 @@
   }
   
   .admin-controls {
+    flex-direction: column;
+    align-items: stretch;
     gap: 1rem;
+  }
+  
+  .button-group {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .queue-control,
+  .complete-control,
+  .system-status-control {
+    justify-content: center;
   }
   
   .status-toggle-label {
@@ -701,4 +787,35 @@
   .admin-section {
     padding: 1rem;
   }
+
+  .footer {
+    padding: 1rem;
+  }
+}
+
+/* Footer Styles */
+.footer {
+  background-color: #fff;
+  border-top: 2px solid #ddd;
+  padding: 1rem 2rem;
+  margin-top: auto;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.github-link {
+  color: #6c757d;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.github-link:hover {
+  color: #333;
+  text-decoration: underline;
 }

@@ -261,6 +261,80 @@ class TestNextCallsignQSOManagement:
         assert 'Database error' in response.json()['detail']
 
 
+class TestCompleteQSOEndpoint:
+    """Test the Complete QSO endpoint functionality"""
+    
+    def test_complete_qso_with_existing_qso(self, test_client):
+        """Test completing an existing QSO"""
+        client, mock_db = test_client
+        
+        # Mock existing QSO to clear
+        mock_db.clear_current_qso.return_value = {
+            'callsign': 'KC1ABC',
+            'timestamp': '2024-01-01T12:00:00Z',
+            'qrz': {
+                'callsign': 'KC1ABC',
+                'name': 'Test User',
+                'address': 'Test Address',
+                'dxcc_name': 'United States',
+                'image': None,
+                'error': None
+            }
+        }
+        
+        response = client.post('/api/admin/qso/complete', auth=('admin', 'admin'))
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data['message'] == 'QSO with KC1ABC completed successfully'
+        assert data['cleared_qso']['callsign'] == 'KC1ABC'
+        assert data['cleared_qso']['timestamp'] == '2024-01-01T12:00:00Z'
+        
+        # Verify clear_current_qso was called
+        mock_db.clear_current_qso.assert_called_once()
+    
+    def test_complete_qso_with_no_existing_qso(self, test_client):
+        """Test completing QSO when no current QSO exists"""
+        client, mock_db = test_client
+        
+        # Mock no current QSO to clear
+        mock_db.clear_current_qso.return_value = None
+        
+        response = client.post('/api/admin/qso/complete', auth=('admin', 'admin'))
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data['message'] == 'No active QSO to complete'
+        assert data['cleared_qso'] is None
+        
+        # Verify clear_current_qso was called
+        mock_db.clear_current_qso.assert_called_once()
+    
+    def test_complete_qso_requires_admin_auth(self, test_client):
+        """Test that Complete QSO endpoint requires admin authentication"""
+        client, mock_db = test_client
+        
+        # Test without auth
+        response = client.post('/api/admin/qso/complete')
+        assert response.status_code == 401
+        
+        # Test with wrong auth
+        response = client.post('/api/admin/qso/complete', auth=('wrong', 'creds'))
+        assert response.status_code == 401
+    
+    def test_complete_qso_database_error_handling(self, test_client):
+        """Test proper error handling when database operations fail"""
+        client, mock_db = test_client
+        
+        # Mock database error
+        mock_db.clear_current_qso.side_effect = Exception("Database connection failed")
+        
+        response = client.post('/api/admin/qso/complete', auth=('admin', 'admin'))
+        
+        assert response.status_code == 500
+        assert 'Database error' in response.json()['detail']
+
+
 class TestQSOManagementEdgeCases:
     """Test edge cases for QSO management"""
     

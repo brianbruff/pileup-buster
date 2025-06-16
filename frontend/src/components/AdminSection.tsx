@@ -4,6 +4,7 @@ export interface AdminSectionProps {
   isLoggedIn: boolean
   onToggleSystemStatus: (active: boolean) => Promise<boolean>
   onWorkNextUser: () => Promise<void>
+  onCompleteCurrentQso: () => Promise<void>
   systemStatus: boolean | null
 }
 
@@ -11,10 +12,12 @@ export default function AdminSection({
   isLoggedIn, 
   onToggleSystemStatus, 
   onWorkNextUser,
+  onCompleteCurrentQso,
   systemStatus 
 }: AdminSectionProps) {
   const [isTogglingStatus, setIsTogglingStatus] = useState(false)
   const [isWorkingNext, setIsWorkingNext] = useState(false)
+  const [isCompletingQso, setIsCompletingQso] = useState(false)
 
   if (!isLoggedIn) {
     return null
@@ -44,21 +47,43 @@ export default function AdminSection({
     }
   }
 
+  const handleCompleteQso = async () => {
+    setIsCompletingQso(true)
+    try {
+      await onCompleteCurrentQso()
+    } catch (error) {
+      console.error('Failed to complete current QSO:', error)
+    } finally {
+      setIsCompletingQso(false)
+    }
+  }
+
   return (
     <section className="admin-section">
       <h2 className="admin-title">Admin Controls</h2>
       <div className="admin-controls">
-        
-        
-        <div className="queue-control">
-          <button
-            className="work-next-button"
-            onClick={handleWorkNext}
-            disabled={isWorkingNext || !systemStatus}
-            type="button"
-          >
-            {isWorkingNext ? 'Working...' : 'Work Next User in Queue'}
-          </button>
+        <div className="button-group">
+          <div className="queue-control">
+            <button
+              className="work-next-button"
+              onClick={handleWorkNext}
+              disabled={isWorkingNext || !systemStatus}
+              type="button"
+            >
+              {isWorkingNext ? 'Working...' : 'Work Next User in Queue'}
+            </button>
+          </div>
+
+          <div className="queue-control complete-control">
+            <button
+              className="complete-qso-button"
+              onClick={handleCompleteQso}
+              disabled={isCompletingQso || !systemStatus}
+              type="button"
+            >
+              {isCompletingQso ? 'Completing...' : 'Complete Current QSO'}
+            </button>
+          </div>
         </div>
 
 

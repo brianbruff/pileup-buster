@@ -5,6 +5,7 @@ from app.auth import verify_admin_credentials
 from app.services.events import event_broadcaster
 import asyncio
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -91,15 +92,46 @@ async def next_callsign(username: str = Depends(verify_admin_credentials)):
             
             # Broadcast updated queue (since someone was removed)
             queue_list = queue_db.get_queue_list()
+            max_queue_size = int(os.getenv('MAX_QUEUE_SIZE', '4'))
             await event_broadcaster.broadcast_queue_update({
                 'queue': queue_list, 
                 'total': len(queue_list), 
+                'max_size': max_queue_size,
                 'system_active': True
             })
         except Exception as e:
             logger.warning(f"Failed to broadcast SSE events: {e}")
         
         return new_qso
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Database error: {str(e)}')
+
+@admin_router.post('/qso/complete')
+async def complete_current_qso(username: str = Depends(verify_admin_credentials)):
+    """Complete the current QSO without advancing to the next station"""
+    try:
+        # Clear the current QSO
+        cleared_qso = queue_db.clear_current_qso()
+        
+        if not cleared_qso:
+            return {
+                'message': 'No active QSO to complete',
+                'cleared_qso': None
+            }
+        
+        # Broadcast that current QSO is now None
+        try:
+            await event_broadcaster.broadcast_current_qso(None)
+        except Exception as e:
+            logger.warning(f"Failed to broadcast current QSO clear event: {e}")
+        
+        return {
+            'message': f'QSO with {cleared_qso["callsign"]} completed successfully',
+            'cleared_qso': cleared_qso
+        }
         
     except HTTPException:
         raise
@@ -134,9 +166,11 @@ async def set_system_status(
             # If system was deactivated, also broadcast empty queue and no current QSO
             if not request.active:
                 await event_broadcaster.broadcast_current_qso(None)
+                max_queue_size = int(os.getenv('MAX_QUEUE_SIZE', '4'))
                 await event_broadcaster.broadcast_queue_update({
                     'queue': [], 
                     'total': 0, 
+                    'max_size': max_queue_size,
                     'system_active': False
                 })
         except Exception as e:

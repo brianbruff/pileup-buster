@@ -8,6 +8,7 @@ from app.validation import validate_callsign
 from app.services.events import event_broadcaster
 import logging
 import asyncio
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -60,9 +61,11 @@ async def register_callsign(request: CallsignRequest):
         # Broadcast updated queue
         try:
             queue_list = queue_db.get_queue_list()
+            max_queue_size = int(os.getenv('MAX_QUEUE_SIZE', '4'))
             await event_broadcaster.broadcast_queue_update({
                 'queue': queue_list, 
                 'total': len(queue_list), 
+                'max_size': max_queue_size,
                 'system_active': True
             })
         except Exception as e:
@@ -106,12 +109,24 @@ def list_queue():
     try:
         # Check if system is active
         system_status = queue_db.get_system_status()
+        max_queue_size = int(os.getenv('MAX_QUEUE_SIZE', '4'))
+        
         if not system_status.get('active', False):
             # Return empty queue if system is inactive
-            return {'queue': [], 'total': 0, 'system_active': False}
+            return {
+                'queue': [], 
+                'total': 0, 
+                'max_size': max_queue_size,
+                'system_active': False
+            }
         
         queue = queue_db.get_queue_list()
-        return {'queue': queue, 'total': len(queue), 'system_active': True}
+        return {
+            'queue': queue, 
+            'total': len(queue), 
+            'max_size': max_queue_size,
+            'system_active': True
+        }
     except Exception as e:
         logger.error(f"Failed to get queue list: {e}")
         raise HTTPException(status_code=500, detail='Failed to get queue list')

@@ -1,3 +1,5 @@
+import { QRZ_LOOKUP_URL_TEMPLATE } from '../config/api';
+
 interface CurrentActiveUser {
   callsign: string;
   name: string;
@@ -17,6 +19,11 @@ interface CurrentActiveCallsignProps {
 }
 
 function CurrentActiveCallsign({ activeUser, qrzData }: CurrentActiveCallsignProps) {
+  // Helper function to generate QRZ lookup URL for a callsign
+  const getQrzUrl = (callsign: string): string => {
+    return QRZ_LOOKUP_URL_TEMPLATE.replace('{CALLSIGN}', callsign);
+  };
+
   // If no active user, show placeholder
   if (!activeUser) {
     return (
@@ -49,7 +56,14 @@ function CurrentActiveCallsign({ activeUser, qrzData }: CurrentActiveCallsignPro
           )}
         </div>
         <div className="active-info">
-          <div className="active-callsign">{activeUser.callsign}</div>
+          <a 
+            href={getQrzUrl(activeUser.callsign)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="active-callsign active-callsign-link"
+          >
+            {activeUser.callsign}
+          </a>
           <div className="active-name">{activeUser.name}</div>
           <div className="active-location">{activeUser.location}</div>
           {qrzData?.url && (
