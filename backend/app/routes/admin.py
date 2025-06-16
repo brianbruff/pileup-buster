@@ -27,13 +27,24 @@ def admin_queue(username: str = Depends(verify_admin_credentials)):
         raise HTTPException(status_code=500, detail=f'Database error: {str(e)}')
 
 @admin_router.delete('/queue/{callsign}')
-def remove_callsign(callsign: str, username: str = Depends(verify_admin_credentials)):
+async def remove_callsign(callsign: str, username: str = Depends(verify_admin_credentials)):
     """Remove a callsign from the queue"""
     callsign = callsign.upper().strip()
     
     try:
         removed_entry = queue_db.remove_callsign(callsign)
         if removed_entry:
+            # Broadcast updated queue (since someone was removed)
+            try:
+                queue_list = queue_db.get_queue_list()
+                await event_broadcaster.broadcast_queue_update({
+                    'queue': queue_list, 
+                    'total': len(queue_list), 
+                    'system_active': True
+                })
+            except Exception as e:
+                logger.warning(f"Failed to broadcast SSE events: {e}")
+            
             return {
                 'message': f'Callsign {callsign} removed from queue',
                 'removed': removed_entry

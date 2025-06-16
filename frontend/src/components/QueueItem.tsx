@@ -16,9 +16,11 @@ export interface QueueItemData {
 export interface QueueItemProps {
   item: QueueItemData
   index: number
+  isAdmin?: boolean
+  onDelete?: (callsign: string) => void
 }
 
-export default function QueueItem({ item, index }: QueueItemProps) {
+export default function QueueItem({ item, index, isAdmin = false, onDelete }: QueueItemProps) {
   const [imageLoadFailed, setImageLoadFailed] = React.useState(false);
   const hasQrzImage = item.qrz?.image && !item.qrz?.error && !imageLoadFailed;
   
@@ -26,9 +28,25 @@ export default function QueueItem({ item, index }: QueueItemProps) {
   React.useEffect(() => {
     setImageLoadFailed(false);
   }, [item.qrz?.image]);
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDelete && window.confirm(`Are you sure you want to remove ${item.callsign} from the queue?`)) {
+      onDelete(item.callsign);
+    }
+  };
   
   return (
-    <div key={index} className="callsign-card">
+    <div key={index} className={`callsign-card ${isAdmin ? 'admin-queue-item' : ''}`}>
+      {isAdmin && onDelete && (
+        <button 
+          className="delete-button"
+          onClick={handleDeleteClick}
+          title={`Remove ${item.callsign} from queue`}
+        >
+          ✕
+        </button>
+      )}
       <div className="operator-image">
         {hasQrzImage ? (
           <img 

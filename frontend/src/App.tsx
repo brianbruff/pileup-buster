@@ -229,6 +229,16 @@ function App() {
     // No need to manually refresh - SSE will broadcast the updates
   }
 
+  const handleDeleteCallsign = async (callsign: string): Promise<void> => {
+    try {
+      await adminApiService.deleteCallsign(callsign)
+      // No need to manually refresh - SSE will broadcast the queue update
+    } catch (error) {
+      console.error('Failed to delete callsign:', error)
+      throw error
+    }
+  }
+
   return (
     <div className="pileup-buster-app">
       {/* Header */}
@@ -278,6 +288,8 @@ function App() {
           queueData={queueData} 
           onAddCallsign={handleCallsignRegistration}
           systemActive={systemStatus === true}
+          isAdmin={isAdminLoggedIn}
+          onDeleteCallsign={isAdminLoggedIn ? handleDeleteCallsign : undefined}
         />
 
         {/* Admin Section - Only visible when logged in */}

@@ -134,6 +134,23 @@ class AdminApiService {
       throw error
     }
   }
+
+  async deleteCallsign(callsign: string): Promise<void> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/queue/${encodeURIComponent(callsign)}`, {
+        method: 'DELETE',
+        headers: this.getAuthHeaders()
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.detail || 'Failed to delete callsign')
+      }
+    } catch (error) {
+      console.error('Failed to delete callsign:', error)
+      throw error
+    }
+  }
 }
 
 export const adminApiService = new AdminApiService()
