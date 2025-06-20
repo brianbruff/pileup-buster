@@ -16,6 +16,8 @@ class QueueDatabase:
         self.collection: Optional[Collection] = None
         self.status_collection: Optional[Collection] = None
         self.currentqso_collection: Optional[Collection] = None
+        self.chat_collection: Optional[Collection] = None
+        self.chat_rooms_collection: Optional[Collection] = None
         self._connect()
     
     def _connect(self):
@@ -33,6 +35,8 @@ class QueueDatabase:
             self.collection = self.db.queue
             self.status_collection = self.db.status
             self.currentqso_collection = self.db.currentqso
+            self.chat_collection = self.db.chat_messages
+            self.chat_rooms_collection = self.db.chat_rooms
             
             # Test connection with short timeout
             self.client.admin.command('ping')
@@ -46,6 +50,8 @@ class QueueDatabase:
             self.collection = None
             self.status_collection = None
             self.currentqso_collection = None
+            self.chat_collection = None
+            self.chat_rooms_collection = None
     
     def register_callsign(self, callsign: str, qrz_info: Dict[str, Any] = None) -> Dict[str, Any]:
         """Register a callsign in the queue with optional QRZ information"""
@@ -337,6 +343,143 @@ class QueueDatabase:
         except Exception:
             # If we can't check status, default to inactive for safety
             return False
+
+    # Chat functionality methods
+    def create_chat_room(self, room_name: str, description: str = "", created_by: str = "system") -> Dict[str, Any]:
+        """Create a new chat room"""
+        if self.chat_rooms_collection is None:
+            raise Exception("Database connection not available")
+        
+        # Check if room already exists
+        existing = self.chat_rooms_collection.find_one({"name": room_name})
+        if existing:
+            raise ValueError(f"Chat room '{room_name}' already exists")
+        
+        room_entry = {
+            "name": room_name,
+            "description": description,
+            "created_by": created_by,
+            "created_at": datetime.utcnow().isoformat(),
+            "active": True,
+            "message_count": 0
+        }
+        
+        result = self.chat_rooms_collection.insert_one(room_entry)
+        room_entry["_id"] = str(result.inserted_id)
+        
+        return room_entry
+    
+    def get_chat_rooms(self) -> List[Dict[str, Any]]:
+        """Get list of all active chat rooms"""
+        if self.chat_rooms_collection is None:
+            raise Exception("Database connection not available")
+        
+        rooms = list(self.chat_rooms_collection.find({"active": True}).sort("created_at", 1))
+        
+        # Convert ObjectId to string and remove it
+        for room in rooms:
+            if "_id" in room:
+                del room["_id"]
+        
+        return rooms
+    
+    def send_chat_message(self, room_name: str, callsign: str, message: str, message_type: str = "message") -> Dict[str, Any]:
+        """Send a chat message to a room"""
+        if self.chat_collection is None:
+            raise Exception("Database connection not available")
+        
+        # Verify room exists
+        room = self.chat_rooms_collection.find_one({"name": room_name, "active": True})
+        if not room:
+            raise ValueError(f"Chat room '{room_name}' not found or inactive")
+        
+        # Create message entry
+        message_entry = {
+            "room_name": room_name,
+            "callsign": callsign,
+            "message": message,
+            "message_type": message_type,  # "message", "join", "leave", "system"
+            "timestamp": datetime.utcnow().isoformat(),
+            "deleted": False
+        }
+        
+        result = self.chat_collection.insert_one(message_entry)
+        message_entry["_id"] = str(result.inserted_id)
+        
+        # Update room message count
+        self.chat_rooms_collection.update_one(
+            {"name": room_name},
+            {"$inc": {"message_count": 1}}
+        )
+        
+        # Remove MongoDB ObjectId for response
+        if "_id" in message_entry:
+            del message_entry["_id"]
+        
+        return message_entry
+    
+    def get_chat_messages(self, room_name: str, limit: int = 50, skip: int = 0) -> List[Dict[str, Any]]:
+        """Get chat messages for a room"""
+        if self.chat_collection is None:
+            raise Exception("Database connection not available")
+        
+        messages = list(
+            self.chat_collection
+            .find({"room_name": room_name, "deleted": False})
+            .sort("timestamp", -1)
+            .skip(skip)
+            .limit(limit)
+        )
+        
+        # Reverse to get chronological order and remove ObjectIds
+        messages.reverse()
+        for message in messages:
+            if "_id" in message:
+                del message["_id"]
+        
+        return messages
+    
+    def delete_chat_message(self, room_name: str, message_timestamp: str, deleted_by: str) -> bool:
+        """Soft delete a chat message (admin function)"""
+        if self.chat_collection is None:
+            raise Exception("Database connection not available")
+        
+        result = self.chat_collection.update_one(
+            {"room_name": room_name, "timestamp": message_timestamp, "deleted": False},
+            {
+                "$set": {
+                    "deleted": True,
+                    "deleted_by": deleted_by,
+                    "deleted_at": datetime.utcnow().isoformat()
+                }
+            }
+        )
+        
+        return result.modified_count > 0
+    
+    def clear_chat_room(self, room_name: str, cleared_by: str = "admin") -> int:
+        """Clear all messages in a chat room (admin function)"""
+        if self.chat_collection is None:
+            raise Exception("Database connection not available")
+        
+        result = self.chat_collection.update_many(
+            {"room_name": room_name, "deleted": False},
+            {
+                "$set": {
+                    "deleted": True,
+                    "deleted_by": cleared_by,
+                    "deleted_at": datetime.utcnow().isoformat()
+                }
+            }
+        )
+        
+        # Reset message count for room
+        self.chat_rooms_collection.update_one(
+            {"name": room_name},
+            {"$set": {"message_count": 0}}
+        )
+        
+        return result.modified_count
 
 
 # Global database instance

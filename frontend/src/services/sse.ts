@@ -69,6 +69,14 @@ export class SSEService {
         this.handleEvent('connected', event)
       })
 
+      this.eventSource.addEventListener('chat_message', (event) => {
+        this.handleEvent('chat_message', event)
+      })
+
+      this.eventSource.addEventListener('chat_room_update', (event) => {
+        this.handleEvent('chat_room_update', event)
+      })
+
       this.eventSource.addEventListener('keepalive', () => {
         // Keepalive events don't need to be handled by the UI
         console.debug('SSE keepalive received')

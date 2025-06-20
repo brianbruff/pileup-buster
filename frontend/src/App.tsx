@@ -7,6 +7,7 @@ import WaitingQueue from './components/WaitingQueue'
 import AdminLogin from './components/AdminLogin'
 import AdminSection from './components/AdminSection'
 import ThemeToggle from './components/ThemeToggle'
+import Chat from './components/Chat'
 import { useTheme } from './contexts/ThemeContext'
 import { type QueueItemData } from './components/QueueItem'
 import { apiService, type CurrentQsoData, type QueueEntry, ApiError } from './services/api'
@@ -28,6 +29,10 @@ function App() {
   // Admin state
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false)
   const [systemStatus, setSystemStatus] = useState<boolean | null>(null)
+
+  // Chat state
+  const [currentChatUser, setCurrentChatUser] = useState<string>('')
+  const [showChatCallsignInput, setShowChatCallsignInput] = useState(false)
 
   // Ref to track previous callsign for clipboard functionality
   const previousCallsignRef = useRef<string | null>(null)
@@ -247,6 +252,8 @@ function App() {
   const handleCallsignRegistration = async (callsign: string) => {
     try {
       await apiService.registerCallsign(callsign)
+      // Set the current chat user to this callsign
+      setCurrentChatUser(callsign.toUpperCase())
       // No need to manually refresh - SSE will broadcast the queue update
     } catch (err) {
       if (err instanceof ApiError) {
@@ -356,6 +363,69 @@ function App() {
           onCompleteCurrentQso={handleCompleteCurrentQso}
           systemStatus={systemStatus}
         />
+
+        {/* Chat Section */}
+        <section className="chat-section">
+          <div className="chat-header">
+            <h2 className="chat-title">Chat</h2>
+            {!currentChatUser && (
+              <button 
+                className="set-callsign-button"
+                onClick={() => setShowChatCallsignInput(!showChatCallsignInput)}
+              >
+                Set Callsign for Chat
+              </button>
+            )}
+            {currentChatUser && (
+              <div className="chat-user-info">
+                Chatting as: <strong>{currentChatUser}</strong>
+                <button 
+                  className="change-callsign-button"
+                  onClick={() => setShowChatCallsignInput(!showChatCallsignInput)}
+                >
+                  Change
+                </button>
+              </div>
+            )}
+          </div>
+
+          {showChatCallsignInput && (
+            <div className="chat-callsign-input">
+              <form onSubmit={(e) => {
+                e.preventDefault()
+                const formData = new FormData(e.target as HTMLFormElement)
+                const callsign = formData.get('chatCallsign') as string
+                if (callsign?.trim()) {
+                  setCurrentChatUser(callsign.trim().toUpperCase())
+                  setShowChatCallsignInput(false)
+                }
+              }}>
+                <input
+                  type="text"
+                  name="chatCallsign"
+                  placeholder="Enter your callsign for chat"
+                  defaultValue={currentChatUser}
+                  className="callsign-input"
+                  maxLength={20}
+                />
+                <button type="submit">Set Callsign</button>
+                <button type="button" onClick={() => setShowChatCallsignInput(false)}>Cancel</button>
+              </form>
+            </div>
+          )}
+
+          {currentChatUser ? (
+            <Chat
+              callsign={currentChatUser}
+              isAdmin={isAdminLoggedIn}
+              adminCredentials={isAdminLoggedIn ? adminApiService.getCredentials() : undefined}
+            />
+          ) : (
+            <div className="chat-not-ready">
+              Please set your callsign to start chatting with other operators.
+            </div>
+          )}
+        </section>
       </main>
 
       {/* Footer */}

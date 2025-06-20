@@ -430,11 +430,13 @@ def create_app():
     from app.routes.admin import admin_router
     from app.routes.public import public_router
     from app.routes.events import events_router
+    from app.routes.chat import chat_router
     
     app.include_router(queue_router, prefix="/api/queue", tags=["queue"])
     app.include_router(admin_router, prefix="/api/admin", tags=["admin"])
     app.include_router(public_router, prefix="/api/public", tags=["public"])
     app.include_router(events_router, prefix="/api/events", tags=["events"])
+    app.include_router(chat_router, prefix="/api/chat", tags=["chat"])
     
     return app
 
