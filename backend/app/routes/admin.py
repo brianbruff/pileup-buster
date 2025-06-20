@@ -14,6 +14,9 @@ admin_router = APIRouter()
 class SystemStatusRequest(BaseModel):
     active: bool
 
+class FrequencyRequest(BaseModel):
+    frequency: str
+
 @admin_router.get('/queue')
 def admin_queue(username: str = Depends(verify_admin_credentials)):
     """Admin view of the queue"""
@@ -192,6 +195,28 @@ def get_system_status(username: str = Depends(verify_admin_credentials)):
     try:
         status = queue_db.get_system_status()
         return status
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Database error: {str(e)}')
+
+@admin_router.post('/frequency')
+async def set_frequency(
+    request: FrequencyRequest, 
+    username: str = Depends(verify_admin_credentials)
+):
+    """Set the current transmission frequency (admin only)"""
+    try:
+        frequency_data = queue_db.set_frequency(request.frequency, username)
+        
+        # Broadcast frequency update
+        try:
+            await event_broadcaster.broadcast_frequency_update(frequency_data)
+        except Exception as e:
+            logger.warning(f"Failed to broadcast frequency update event: {e}")
+        
+        return {
+            'message': f'Frequency set to {request.frequency}',
+            'frequency_data': frequency_data
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f'Database error: {str(e)}')
 

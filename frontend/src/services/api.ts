@@ -93,4 +93,10 @@ export const apiService = {
     const response = await fetch(`${API_BASE_URL}/queue/list`)
     return handleResponse<QueueListResponse>(response)
   },
+
+  // Get current frequency (public endpoint)
+  async getCurrentFrequency(): Promise<{ frequency: string | null; last_updated: string | null }> {
+    const response = await fetch(`${API_BASE_URL}/public/frequency`)
+    return handleResponse<{ frequency: string | null; last_updated: string | null }>(response)
+  },
 }

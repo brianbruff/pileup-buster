@@ -6,6 +6,7 @@ import CurrentActiveCallsign, { type CurrentActiveUser } from './components/Curr
 import WaitingQueue from './components/WaitingQueue'
 import AdminLogin from './components/AdminLogin'
 import AdminSection from './components/AdminSection'
+import FrequencyDisplay from './components/FrequencyDisplay'
 import ThemeToggle from './components/ThemeToggle'
 import { useTheme } from './contexts/ThemeContext'
 import { type QueueItemData } from './components/QueueItem'
@@ -299,6 +300,11 @@ function App() {
     // No need to manually refresh - SSE will broadcast the updates
   }
 
+  const handleSetFrequency = async (frequency: string): Promise<void> => {
+    await adminApiService.setFrequency(frequency)
+    // No need to manually refresh - SSE will broadcast the frequency update
+  }
+
   return (
     <div className="pileup-buster-app">
       {/* Header */}
@@ -348,12 +354,16 @@ function App() {
           systemActive={systemStatus === true}
         />
 
+        {/* Frequency Display - Visible to all users */}
+        <FrequencyDisplay className="public-frequency-display" />
+
         {/* Admin Section - Only visible when logged in */}
         <AdminSection 
           isLoggedIn={isAdminLoggedIn}
           onToggleSystemStatus={handleToggleSystemStatus}
           onWorkNextUser={handleWorkNextUser}
           onCompleteCurrentQso={handleCompleteCurrentQso}
+          onSetFrequency={handleSetFrequency}
           systemStatus={systemStatus}
         />
       </main>

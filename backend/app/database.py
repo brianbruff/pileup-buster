@@ -329,6 +329,49 @@ class QueueDatabase:
             })
         }
     
+    def get_frequency(self) -> Optional[Dict[str, Any]]:
+        """Get the current transmission frequency"""
+        if self.status_collection is None:
+            raise Exception("Database connection not available")
+        
+        # Find the frequency document
+        freq_doc = self.status_collection.find_one({"_id": "frequency"})
+        
+        if not freq_doc:
+            return None
+        
+        return {
+            "frequency": freq_doc.get("frequency"),
+            "last_updated": freq_doc.get("last_updated"),
+            "updated_by": freq_doc.get("updated_by")
+        }
+    
+    def set_frequency(self, frequency: str, updated_by: str = "admin") -> Dict[str, Any]:
+        """Set the current transmission frequency"""
+        if self.status_collection is None:
+            raise Exception("Database connection not available")
+        
+        # Create frequency document
+        freq_update = {
+            "_id": "frequency",
+            "frequency": frequency,
+            "last_updated": datetime.utcnow().isoformat(),
+            "updated_by": updated_by
+        }
+        
+        # Update or create frequency document
+        self.status_collection.replace_one(
+            {"_id": "frequency"},
+            freq_update,
+            upsert=True
+        )
+        
+        return {
+            "frequency": frequency,
+            "last_updated": freq_update["last_updated"],
+            "updated_by": updated_by
+        }
+    
     def is_system_active(self) -> bool:
         """Check if the system is currently active"""
         try:
