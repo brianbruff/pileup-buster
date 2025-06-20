@@ -4,9 +4,44 @@
 import { API_BASE_URL } from '../config/api'
 
 export interface StateChangeEvent {
-  type: 'current_qso' | 'queue_update' | 'system_status' | 'connected' | 'keepalive'
-  data: any
+  type: 'current_qso' | 'queue_update' | 'system_status' | 'connected' | 'keepalive' | 'chat_message' | 'chat_room_update'
+  data: unknown
   timestamp: string
+}
+
+// Specific event data interfaces
+export interface CurrentQsoEventData {
+  callsign?: string
+  timestamp?: string
+  qrz?: unknown
+}
+
+export interface QueueUpdateEventData {
+  queue?: unknown[]
+  total?: number
+  max_size?: number
+}
+
+export interface SystemStatusEventData {
+  active?: boolean
+}
+
+export interface ChatMessageEventData {
+  room_name: string
+  callsign: string
+  message: string
+  timestamp: string
+  message_type: string
+  deleted?: boolean
+  deleted_by?: string
+}
+
+export interface ChatRoomUpdateEventData {
+  action: string
+  room?: unknown
+  room_name?: string
+  cleared_by?: string
+  message_count?: number
 }
 
 export type EventCallback = (event: StateChangeEvent) => void

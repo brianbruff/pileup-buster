@@ -12,7 +12,7 @@ import { useTheme } from './contexts/ThemeContext'
 import { type QueueItemData } from './components/QueueItem'
 import { apiService, type CurrentQsoData, type QueueEntry, ApiError } from './services/api'
 import { adminApiService } from './services/adminApi'
-import { sseService, type StateChangeEvent } from './services/sse'
+import { sseService, type StateChangeEvent, type CurrentQsoEventData, type QueueUpdateEventData, type SystemStatusEventData } from './services/sse'
 
 function App() {
   // Theme
@@ -167,7 +167,7 @@ function App() {
     // Event handlers for different types of state changes
     const handleCurrentQsoEvent = (event: StateChangeEvent) => {
       console.log('Received current_qso event:', event)
-      const newQso = event.data
+      const newQso = event.data as CurrentQsoEventData
       const previousCallsign = previousCallsignRef.current
       const newCallsign = newQso?.callsign
       
@@ -179,30 +179,32 @@ function App() {
       // Update the ref with the new callsign
       previousCallsignRef.current = newCallsign || null
       
-      setCurrentQso(newQso)
+      setCurrentQso(newQso as CurrentQsoData)
     }
 
     const handleQueueUpdateEvent = (event: StateChangeEvent) => {
       console.log('Received queue_update event:', event)
-      if (event.data?.queue) {
-        const queueItems = event.data.queue.map(convertQueueEntryToItemData)
+      const queueData = event.data as QueueUpdateEventData
+      if (queueData?.queue) {
+        const queueItems = queueData.queue.map(convertQueueEntryToItemData)
         setQueueData(queueItems)
-        if (event.data.total !== undefined) {
-          setQueueTotal(event.data.total)
+        if (queueData.total !== undefined) {
+          setQueueTotal(queueData.total)
         }
-        if (event.data.max_size !== undefined) {
-          setQueueMaxSize(event.data.max_size)
+        if (queueData.max_size !== undefined) {
+          setQueueMaxSize(queueData.max_size)
         }
       }
     }
 
     const handleSystemStatusEvent = (event: StateChangeEvent) => {
       console.log('Received system_status event:', event)
-      if (event.data?.active !== undefined) {
-        setSystemStatus(event.data.active)
+      const statusData = event.data as SystemStatusEventData
+      if (statusData?.active !== undefined) {
+        setSystemStatus(statusData.active)
         
         // Clear error state when system is activated
-        if (event.data.active) {
+        if (statusData.active) {
           setError(null)
         }
       }

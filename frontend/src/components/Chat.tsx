@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import ChatRoom from './ChatRoom'
 import type { ChatRoom as ChatRoomType } from '../services/chatApi'
 import { chatApiService } from '../services/chatApi'
-import { sseService, type StateChangeEvent } from '../services/sse'
+import { sseService, type StateChangeEvent, type ChatRoomUpdateEventData } from '../services/sse'
 
 interface ChatProps {
   callsign: string
@@ -48,14 +48,14 @@ export default function Chat({ callsign, isAdmin, adminCredentials }: ChatProps)
   // Handle room updates via SSE
   useEffect(() => {
     const handleChatRoomUpdate = (event: StateChangeEvent) => {
-      const updateData = event.data
+      const updateData = event.data as ChatRoomUpdateEventData
       
       if (updateData.action === 'created' && updateData.room) {
         // Add new room to list
         setRooms(prev => {
-          const exists = prev.some(room => room.name === updateData.room.name)
+          const exists = prev.some(room => room.name === (updateData.room as any).name)
           if (exists) return prev
-          return [...prev, updateData.room]
+          return [...prev, updateData.room as any]
         })
       }
     }

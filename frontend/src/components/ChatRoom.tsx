@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import ChatMessage from './ChatMessage'
 import type { ChatMessage as ChatMessageType, ChatRoom as ChatRoomType } from '../services/chatApi'
 import { chatApiService } from '../services/chatApi'
-import { sseService, type StateChangeEvent } from '../services/sse'
+import { sseService, type StateChangeEvent, type ChatMessageEventData, type ChatRoomUpdateEventData } from '../services/sse'
 
 interface ChatRoomProps {
   room: ChatRoomType
@@ -51,7 +51,7 @@ export default function ChatRoom({ room, callsign, isAdmin, adminCredentials }: 
   // Handle real-time chat messages via SSE
   useEffect(() => {
     const handleChatMessage = (event: StateChangeEvent) => {
-      const messageData = event.data as ChatMessageType
+      const messageData = event.data as ChatMessageEventData
       
       // Only add messages for the current room
       if (messageData.room_name === room.name) {
@@ -74,7 +74,7 @@ export default function ChatRoom({ room, callsign, isAdmin, adminCredentials }: 
     }
 
     const handleChatRoomUpdate = (event: StateChangeEvent) => {
-      const updateData = event.data
+      const updateData = event.data as ChatRoomUpdateEventData
       if (updateData.action === 'cleared' && updateData.room_name === room.name) {
         setMessages([])
       }
