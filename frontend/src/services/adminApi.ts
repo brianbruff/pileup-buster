@@ -57,6 +57,13 @@ class AdminApiService {
     return this.credentials !== null
   }
 
+  getCredentials(): string | undefined {
+    if (!this.credentials) {
+      return undefined
+    }
+    return btoa(`${this.credentials.username}:${this.credentials.password}`)
+  }
+
   async login(username: string, password: string): Promise<boolean> {
     const credentials = { username, password }
     

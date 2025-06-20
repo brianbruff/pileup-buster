@@ -16,6 +16,8 @@ class EventType(str, Enum):
     CURRENT_QSO = "current_qso"
     QUEUE_UPDATE = "queue_update"
     SYSTEM_STATUS = "system_status"
+    CHAT_MESSAGE = "chat_message"
+    CHAT_ROOM_UPDATE = "chat_room_update"
 
 
 class EventBroadcaster:
@@ -79,6 +81,14 @@ class EventBroadcaster:
     async def broadcast_system_status(self, status: Dict[str, Any]):
         """Broadcast system status change event"""
         await self.broadcast_event(EventType.SYSTEM_STATUS, status)
+    
+    async def broadcast_chat_message(self, message_data: Dict[str, Any]):
+        """Broadcast new chat message event"""
+        await self.broadcast_event(EventType.CHAT_MESSAGE, message_data)
+    
+    async def broadcast_chat_room_update(self, room_data: Dict[str, Any]):
+        """Broadcast chat room update event"""
+        await self.broadcast_event(EventType.CHAT_ROOM_UPDATE, room_data)
 
 
 # Global event broadcaster instance
