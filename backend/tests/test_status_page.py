@@ -284,3 +284,141 @@ class TestStatusPageEndpoint:
             assert 'Queue (15 users)' in content
             assert '+5 more' in content  # Shows remaining users after 10
             assert 'users in queue' in content
+
+    def test_get_status_page_with_frequency_only(self, test_client):
+        """Test status page displays frequency when set"""
+        mock_status = {
+            'active': True, 
+            'last_updated': '2024-01-01T12:00:00'
+        }
+        mock_frequency_data = {
+            'frequency': '146.520 MHz',
+            'last_updated': '2024-01-01T12:00:00'
+        }
+        
+        with patch('app.database.queue_db.get_system_status') as mock_get_status, \
+             patch('app.database.queue_db.get_current_qso') as mock_get_qso, \
+             patch('app.database.queue_db.get_queue_list') as mock_get_queue, \
+             patch('app.database.queue_db.get_frequency') as mock_get_frequency, \
+             patch('app.database.queue_db.get_split') as mock_get_split:
+            mock_get_status.return_value = mock_status
+            mock_get_qso.return_value = None
+            mock_get_queue.return_value = []
+            mock_get_frequency.return_value = mock_frequency_data
+            mock_get_split.return_value = None
+            
+            response = test_client.get('/status')
+            
+            assert response.status_code == 200
+            content = response.text
+            
+            # Should display frequency in status banner
+            assert 'System Status: ACTIVE' in content
+            assert 'Frequency: 146.520 MHz' in content
+            # Should not display split since it's not set
+            assert 'Split:' not in content
+
+    def test_get_status_page_with_split_only(self, test_client):
+        """Test status page displays split when set"""
+        mock_status = {
+            'active': True, 
+            'last_updated': '2024-01-01T12:00:00'
+        }
+        mock_split_data = {
+            'split': '+5',
+            'last_updated': '2024-01-01T12:00:00'
+        }
+        
+        with patch('app.database.queue_db.get_system_status') as mock_get_status, \
+             patch('app.database.queue_db.get_current_qso') as mock_get_qso, \
+             patch('app.database.queue_db.get_queue_list') as mock_get_queue, \
+             patch('app.database.queue_db.get_frequency') as mock_get_frequency, \
+             patch('app.database.queue_db.get_split') as mock_get_split:
+            mock_get_status.return_value = mock_status
+            mock_get_qso.return_value = None
+            mock_get_queue.return_value = []
+            mock_get_frequency.return_value = None
+            mock_get_split.return_value = mock_split_data
+            
+            response = test_client.get('/status')
+            
+            assert response.status_code == 200
+            content = response.text
+            
+            # Should display split in status banner
+            assert 'System Status: ACTIVE' in content
+            assert 'Split: +5' in content
+            # Should not display frequency since it's not set
+            assert 'Frequency:' not in content
+
+    def test_get_status_page_with_frequency_and_split(self, test_client):
+        """Test status page displays both frequency and split when both are set"""
+        mock_status = {
+            'active': True, 
+            'last_updated': '2024-01-01T12:00:00'
+        }
+        mock_frequency_data = {
+            'frequency': '14.205 MHz',
+            'last_updated': '2024-01-01T12:00:00'
+        }
+        mock_split_data = {
+            'split': '+10',
+            'last_updated': '2024-01-01T12:00:00'
+        }
+        
+        with patch('app.database.queue_db.get_system_status') as mock_get_status, \
+             patch('app.database.queue_db.get_current_qso') as mock_get_qso, \
+             patch('app.database.queue_db.get_queue_list') as mock_get_queue, \
+             patch('app.database.queue_db.get_frequency') as mock_get_frequency, \
+             patch('app.database.queue_db.get_split') as mock_get_split:
+            mock_get_status.return_value = mock_status
+            mock_get_qso.return_value = None
+            mock_get_queue.return_value = []
+            mock_get_frequency.return_value = mock_frequency_data
+            mock_get_split.return_value = mock_split_data
+            
+            response = test_client.get('/status')
+            
+            assert response.status_code == 200
+            content = response.text
+            
+            # Should display both frequency and split in status banner
+            assert 'System Status: ACTIVE' in content
+            assert 'Frequency: 14.205 MHz' in content
+            assert 'Split: +10' in content
+
+    def test_get_status_page_with_empty_frequency_and_split(self, test_client):
+        """Test status page handles empty frequency and split values gracefully"""
+        mock_status = {
+            'active': True, 
+            'last_updated': '2024-01-01T12:00:00'
+        }
+        mock_frequency_data = {
+            'frequency': '',  # Empty frequency
+            'last_updated': '2024-01-01T12:00:00'
+        }
+        mock_split_data = {
+            'split': '',  # Empty split
+            'last_updated': '2024-01-01T12:00:00'
+        }
+        
+        with patch('app.database.queue_db.get_system_status') as mock_get_status, \
+             patch('app.database.queue_db.get_current_qso') as mock_get_qso, \
+             patch('app.database.queue_db.get_queue_list') as mock_get_queue, \
+             patch('app.database.queue_db.get_frequency') as mock_get_frequency, \
+             patch('app.database.queue_db.get_split') as mock_get_split:
+            mock_get_status.return_value = mock_status
+            mock_get_qso.return_value = None
+            mock_get_queue.return_value = []
+            mock_get_frequency.return_value = mock_frequency_data
+            mock_get_split.return_value = mock_split_data
+            
+            response = test_client.get('/status')
+            
+            assert response.status_code == 200
+            content = response.text
+            
+            # Should not display frequency or split when they are empty
+            assert 'System Status: ACTIVE' in content
+            assert 'Frequency:' not in content
+            assert 'Split:' not in content

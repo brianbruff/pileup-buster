@@ -9,7 +9,7 @@ import logging
 from datetime import datetime
 
 
-def generate_status_html_optimized(frontend_url: str, timestamp: str, system_status: dict, current_qso: dict = None, queue_list: list = None) -> str:
+def generate_status_html_optimized(frontend_url: str, timestamp: str, system_status: dict, current_qso: dict = None, queue_list: list = None, frequency_data: dict = None, split_data: dict = None) -> str:
     """
     Generate optimized HTML status page without screenshots
     
@@ -19,6 +19,8 @@ def generate_status_html_optimized(frontend_url: str, timestamp: str, system_sta
         system_status: System status information from database
         current_qso: Current QSO information (optional)
         queue_list: List of users in queue (optional)
+        frequency_data: Current frequency information (optional)
+        split_data: Current split information (optional)
         
     Returns:
         HTML content as string
@@ -27,6 +29,15 @@ def generate_status_html_optimized(frontend_url: str, timestamp: str, system_sta
     status_class = 'active' if is_active else 'inactive'
     status_text = 'ACTIVE' if is_active else 'INACTIVE'
     status_color = '#28a745' if is_active else '#dc3545'
+    
+    # Build frequency and split information for status banner
+    frequency_info = ""
+    if frequency_data and frequency_data.get('frequency'):
+        frequency_info = f"<br><small>Frequency: {frequency_data['frequency']}</small>"
+    
+    split_info = ""
+    if split_data and split_data.get('split'):
+        split_info = f"<br><small>Split: {split_data['split']}</small>"
     
     # Build current user section
     current_user_section = ""
@@ -306,7 +317,7 @@ def generate_status_html_optimized(frontend_url: str, timestamp: str, system_sta
         </div>
         
         <div class="status-banner {status_class}">
-            System Status: {status_text}
+            System Status: {status_text}{frequency_info}{split_info}
         </div>
         
         <div class="content">
@@ -405,11 +416,25 @@ def create_app():
             except Exception:
                 pass  # Empty queue is fine
             
+            # Get frequency information
+            frequency_data = None
+            try:
+                frequency_data = queue_db.get_frequency()
+            except Exception:
+                pass  # No frequency is fine
+            
+            # Get split information
+            split_data = None
+            try:
+                split_data = queue_db.get_split()
+            except Exception:
+                pass  # No split is fine
+            
             # Generate timestamp
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')
             
             # Generate HTML page with system status and queue info
-            html_content = generate_status_html_optimized(frontend_url, timestamp, system_status, current_qso, queue_list)
+            html_content = generate_status_html_optimized(frontend_url, timestamp, system_status, current_qso, queue_list, frequency_data, split_data)
             
             return HTMLResponse(content=html_content, status_code=200)
             
