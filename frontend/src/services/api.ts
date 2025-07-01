@@ -99,4 +99,10 @@ export const apiService = {
     const response = await fetch(`${API_BASE_URL}/public/frequency`)
     return handleResponse<{ frequency: string | null; last_updated: string | null }>(response)
   },
+
+  // Get current split (public endpoint)
+  async getCurrentSplit(): Promise<{ split: string | null; last_updated: string | null }> {
+    const response = await fetch(`${API_BASE_URL}/public/split`)
+    return handleResponse<{ split: string | null; last_updated: string | null }>(response)
+  },
 }

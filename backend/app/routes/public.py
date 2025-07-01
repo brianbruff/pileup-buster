@@ -40,3 +40,22 @@ def get_current_frequency():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f'Database error: {str(e)}')
+
+@public_router.get('/split')
+def get_current_split():
+    """Get the current split value - public endpoint"""
+    try:
+        split_data = queue_db.get_split()
+        if split_data is None:
+            return {
+                'split': None,
+                'last_updated': None
+            }
+        
+        # Return split data excluding admin username for public consumption
+        return {
+            'split': split_data.get('split'),
+            'last_updated': split_data.get('last_updated')
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Database error: {str(e)}')

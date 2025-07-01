@@ -17,6 +17,9 @@ class SystemStatusRequest(BaseModel):
 class FrequencyRequest(BaseModel):
     frequency: str
 
+class SplitRequest(BaseModel):
+    split: str
+
 @admin_router.get('/queue')
 def admin_queue(username: str = Depends(verify_admin_credentials)):
     """Admin view of the queue"""
@@ -176,6 +179,13 @@ async def set_system_status(
                     'max_size': max_queue_size,
                     'system_active': False
                 })
+                
+                # Clear split when system goes offline
+                try:
+                    split_data = queue_db.clear_split(username)
+                    await event_broadcaster.broadcast_split_update(split_data)
+                except Exception as e:
+                    logger.warning(f"Failed to clear split when going offline: {e}")
         except Exception as e:
             logger.warning(f"Failed to broadcast system status events: {e}")
         
@@ -216,6 +226,74 @@ async def set_frequency(
         return {
             'message': f'Frequency set to {request.frequency}',
             'frequency_data': frequency_data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Database error: {str(e)}')
+
+@admin_router.delete('/frequency')
+async def clear_frequency(
+    username: str = Depends(verify_admin_credentials)
+):
+    """Clear the current transmission frequency (admin only)"""
+    try:
+        frequency_data = queue_db.clear_frequency(username)
+        
+        # Broadcast frequency update (with None frequency)
+        try:
+            await event_broadcaster.broadcast_frequency_update({
+                'frequency': None,
+                'last_updated': frequency_data['last_updated'],
+                'updated_by': frequency_data['updated_by']
+            })
+        except Exception as e:
+            logger.warning(f"Failed to broadcast frequency clear event: {e}")
+        
+        return {
+            'message': 'Frequency cleared successfully',
+            'frequency_data': frequency_data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Database error: {str(e)}')
+
+@admin_router.post('/split')
+async def set_split(
+    request: SplitRequest, 
+    username: str = Depends(verify_admin_credentials)
+):
+    """Set the current split value (admin only)"""
+    try:
+        split_data = queue_db.set_split(request.split, username)
+        
+        # Broadcast split update
+        try:
+            await event_broadcaster.broadcast_split_update(split_data)
+        except Exception as e:
+            logger.warning(f"Failed to broadcast split update event: {e}")
+        
+        return {
+            'message': f'Split set to {request.split}',
+            'split_data': split_data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Database error: {str(e)}')
+
+@admin_router.delete('/split')
+async def clear_split(
+    username: str = Depends(verify_admin_credentials)
+):
+    """Clear the current split value (admin only)"""
+    try:
+        split_data = queue_db.clear_split(username)
+        
+        # Broadcast split update
+        try:
+            await event_broadcaster.broadcast_split_update(split_data)
+        except Exception as e:
+            logger.warning(f"Failed to broadcast split clear event: {e}")
+        
+        return {
+            'message': 'Split cleared',
+            'split_data': split_data
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f'Database error: {str(e)}')

@@ -372,6 +372,21 @@ class QueueDatabase:
             "updated_by": updated_by
         }
     
+    def clear_frequency(self, updated_by: str = "admin") -> Dict[str, Any]:
+        """Clear the current transmission frequency"""
+        if self.status_collection is None:
+            raise Exception("Database connection not available")
+        
+        # Remove frequency document
+        result = self.status_collection.delete_one({"_id": "frequency"})
+        
+        return {
+            "frequency": None,
+            "last_updated": datetime.utcnow().isoformat(),
+            "updated_by": updated_by,
+            "cleared": result.deleted_count > 0
+        }
+    
     def is_system_active(self) -> bool:
         """Check if the system is currently active"""
         try:
@@ -380,6 +395,63 @@ class QueueDatabase:
         except Exception:
             # If we can't check status, default to inactive for safety
             return False
+
+    def get_split(self) -> Optional[Dict[str, Any]]:
+        """Get the current split value"""
+        if self.status_collection is None:
+            raise Exception("Database connection not available")
+        
+        # Find the split document
+        split_doc = self.status_collection.find_one({"_id": "split"})
+        
+        if not split_doc:
+            return None
+        
+        return {
+            "split": split_doc.get("split"),
+            "last_updated": split_doc.get("last_updated"),
+            "updated_by": split_doc.get("updated_by")
+        }
+    
+    def set_split(self, split: str, updated_by: str = "admin") -> Dict[str, Any]:
+        """Set the current split value"""
+        if self.status_collection is None:
+            raise Exception("Database connection not available")
+        
+        # Create split document
+        split_update = {
+            "_id": "split",
+            "split": split,
+            "last_updated": datetime.utcnow().isoformat(),
+            "updated_by": updated_by
+        }
+        
+        # Update or create split document
+        self.status_collection.replace_one(
+            {"_id": "split"},
+            split_update,
+            upsert=True
+        )
+        
+        return {
+            "split": split,
+            "last_updated": split_update["last_updated"],
+            "updated_by": updated_by
+        }
+
+    def clear_split(self, updated_by: str = "admin") -> Dict[str, Any]:
+        """Clear the current split value"""
+        if self.status_collection is None:
+            raise Exception("Database connection not available")
+        
+        # Delete the split document
+        self.status_collection.delete_one({"_id": "split"})
+        
+        return {
+            "split": None,
+            "last_updated": datetime.utcnow().isoformat(),
+            "updated_by": updated_by
+        }
 
 
 # Global database instance

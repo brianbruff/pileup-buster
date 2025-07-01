@@ -120,7 +120,7 @@ class AdminApiService {
     }
   }
 
-  async workNextUser(): Promise<void> {
+  async workNextUser(): Promise<CurrentQsoData | null> {
     try {
       const response = await fetch(`${API_BASE_URL}/admin/queue/next`, {
         method: 'POST',
@@ -130,6 +130,8 @@ class AdminApiService {
       if (!response.ok) {
         throw new Error('Failed to work next user')
       }
+
+      return await response.json()
     } catch (error) {
       console.error('Failed to work next user:', error)
       throw error
@@ -169,6 +171,61 @@ class AdminApiService {
       return await response.json()
     } catch (error) {
       console.error('Failed to set frequency:', error)
+      throw error
+    }
+  }
+
+  async setSplit(split: string): Promise<{ message: string; split_data: any }> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/split`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({ split })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to set split')
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Failed to set split:', error)
+      throw error
+    }
+  }
+
+  async clearFrequency(): Promise<{ message: string; frequency_data: any }> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/frequency`, {
+        method: 'DELETE',
+        headers: this.getAuthHeaders()
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to clear frequency')
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Failed to clear frequency:', error)
+      throw error
+    }
+  }
+
+  async clearSplit(): Promise<{ message: string; split_data: any }> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/split`, {
+        method: 'DELETE',
+        headers: this.getAuthHeaders()
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to clear split')
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Failed to clear split:', error)
       throw error
     }
   }
