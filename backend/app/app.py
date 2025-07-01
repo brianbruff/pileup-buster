@@ -30,13 +30,13 @@ def generate_status_html_optimized(frontend_url: str, timestamp: str, system_sta
     status_text = 'ACTIVE' if is_active else 'INACTIVE'
     status_color = '#28a745' if is_active else '#dc3545'
     
-    # Build frequency and split information for status banner
+    # Build frequency and split information for status banner (only when system is active)
     frequency_info = ""
-    if frequency_data and frequency_data.get('frequency'):
+    if is_active and frequency_data and frequency_data.get('frequency'):
         frequency_info = f"<br><small>Frequency: {frequency_data['frequency']}</small>"
     
     split_info = ""
-    if split_data and split_data.get('split'):
+    if is_active and split_data and split_data.get('split'):
         split_info = f"<br><small>Split: {split_data['split']}</small>"
     
     # Build current user section

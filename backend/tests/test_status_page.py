@@ -422,3 +422,42 @@ class TestStatusPageEndpoint:
             assert 'System Status: ACTIVE' in content
             assert 'Frequency:' not in content
             assert 'Split:' not in content
+
+    def test_get_status_page_inactive_system_with_frequency_and_split(self, test_client):
+        """Test status page does not display frequency and split when system is inactive"""
+        mock_status = {
+            'active': False,  # System is INACTIVE
+            'last_updated': '2024-01-01T12:00:00'
+        }
+        mock_frequency_data = {
+            'frequency': '146.520 MHz',
+            'last_updated': '2024-01-01T12:00:00'
+        }
+        mock_split_data = {
+            'split': '+5',
+            'last_updated': '2024-01-01T12:00:00'
+        }
+        
+        with patch('app.database.queue_db.get_system_status') as mock_get_status, \
+             patch('app.database.queue_db.get_current_qso') as mock_get_qso, \
+             patch('app.database.queue_db.get_queue_list') as mock_get_queue, \
+             patch('app.database.queue_db.get_frequency') as mock_get_frequency, \
+             patch('app.database.queue_db.get_split') as mock_get_split:
+            mock_get_status.return_value = mock_status
+            mock_get_qso.return_value = None
+            mock_get_queue.return_value = []
+            mock_get_frequency.return_value = mock_frequency_data
+            mock_get_split.return_value = mock_split_data
+            
+            response = test_client.get('/status')
+            
+            assert response.status_code == 200
+            content = response.text
+            
+            # Should display inactive status
+            assert 'System Status: INACTIVE' in content
+            # Should NOT display frequency or split when system is inactive
+            assert 'Frequency:' not in content
+            assert 'Split:' not in content
+            assert '146.520 MHz' not in content
+            assert '+5' not in content
