@@ -16,6 +16,7 @@ class EventType(str, Enum):
     CURRENT_QSO = "current_qso"
     QUEUE_UPDATE = "queue_update"
     SYSTEM_STATUS = "system_status"
+    FREQUENCY_UPDATE = "frequency_update"
 
 
 class EventBroadcaster:
@@ -79,6 +80,10 @@ class EventBroadcaster:
     async def broadcast_system_status(self, status: Dict[str, Any]):
         """Broadcast system status change event"""
         await self.broadcast_event(EventType.SYSTEM_STATUS, status)
+    
+    async def broadcast_frequency_update(self, frequency_data: Dict[str, Any]):
+        """Broadcast frequency update event"""
+        await self.broadcast_event(EventType.FREQUENCY_UPDATE, frequency_data)
 
 
 # Global event broadcaster instance

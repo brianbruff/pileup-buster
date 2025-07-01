@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clipboard Functionality Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 3px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 3px;
+            background-color: #f8f9fa;
+        }
+        .success {
+            background-color: #d4edda !important;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da !important;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>Clipboard Functionality Test</h1>
+    <p>This page tests the clipboard functionality implementation used in Pileup Buster.</p>
+    
+    <div class="test-section">
+        <h3>Test Clipboard Copy</h3>
+        <p>Click the button below to test copying a callsign to clipboard:</p>
+        <button onclick="testClipboard('KC1ABC')">Copy KC1ABC</button>
+        <button onclick="testClipboard('W1AW')">Copy W1AW</button>
+        <button onclick="testClipboard('VK2DEF')">Copy VK2DEF</button>
+        <div id="status">Ready to test...</div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test Callsign Change Detection</h3>
+        <p>This simulates the logic for detecting when to copy callsigns:</p>
+        <button onclick="simulateChange(null, 'KC1ABC')">null → KC1ABC</button>
+        <button onclick="simulateChange('KC1ABC', 'W1AW')">KC1ABC → W1AW</button>
+        <button onclick="simulateChange('W1AW', 'W1AW')">W1AW → W1AW (no change)</button>
+        <button onclick="simulateChange('KC1ABC', null)">KC1ABC → null</button>
+        <div id="change-status">Ready to test change detection...</div>
+    </div>
+
+    <div class="test-section">
+        <h3>Manual Clipboard Check</h3>
+        <p>After copying above, paste here to verify:</p>
+        <textarea id="pasteArea" placeholder="Paste here to verify clipboard content..." style="width: 100%; height: 60px;"></textarea>
+    </div>
+
+    <script>
+        // Copy the exact implementation from App.tsx
+        const copyToClipboard = async (text) => {
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    // Use modern Clipboard API if available
+                    await navigator.clipboard.writeText(text);
+                    console.log(`Copied callsign to clipboard: ${text}`);
+                    return true;
+                } else {
+                    // Fallback for older browsers or insecure contexts
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    textArea.style.position = 'fixed';
+                    textArea.style.left = '-999999px';
+                    textArea.style.top = '-999999px';
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    
+                    try {
+                        const success = document.execCommand('copy');
+                        console.log(`Copied callsign to clipboard (fallback): ${text}`);
+                        return success;
+                    } catch (err) {
+                        console.warn('Failed to copy callsign to clipboard:', err);
+                        return false;
+                    } finally {
+                        document.body.removeChild(textArea);
+                    }
+                }
+            } catch (err) {
+                console.warn('Failed to copy callsign to clipboard:', err);
+                return false;
+            }
+        };
+
+        async function testClipboard(callsign) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = `Copying ${callsign}...`;
+            statusEl.className = '';
+            
+            try {
+                const success = await copyToClipboard(callsign);
+                if (success !== false) {
+                    statusEl.textContent = `✅ Successfully copied ${callsign} to clipboard!`;
+                    statusEl.className = 'success';
+                } else {
+                    statusEl.textContent = `❌ Failed to copy ${callsign} to clipboard`;
+                    statusEl.className = 'error';
+                }
+            } catch (error) {
+                statusEl.textContent = `❌ Error copying ${callsign}: ${error.message}`;
+                statusEl.className = 'error';
+            }
+        }
+
+        function simulateChange(previous, current) {
+            const statusEl = document.getElementById('change-status');
+            
+            // This is the exact logic from handleCurrentQsoEvent
+            const shouldCopy = current && current !== previous;
+            
+            if (shouldCopy) {
+                statusEl.textContent = `✅ Would copy "${current}" (previous: "${previous}")`;
+                statusEl.className = 'success';
+                // Actually copy it to demonstrate
+                testClipboard(current);
+            } else {
+                statusEl.textContent = `ℹ️ Would NOT copy (previous: "${previous}", current: "${current}")`;
+                statusEl.className = '';
+            }
+        }
+
+        // Check if we're in a secure context
+        document.addEventListener('DOMContentLoaded', () => {
+            const statusEl = document.getElementById('status');
+            if (!window.isSecureContext) {
+                statusEl.textContent = '⚠️ Warning: Not in secure context. Clipboard API may not work. Try accessing via localhost or HTTPS.';
+                statusEl.className = 'error';
+            }
+        });
+    </script>
+</body>
+</html>

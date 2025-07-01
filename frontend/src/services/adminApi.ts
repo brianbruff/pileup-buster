@@ -1,5 +1,6 @@
 // API service for admin functionality
 import { API_BASE_URL } from '../config/api'
+import { type CurrentQsoData } from './api'
 
 export interface AdminCredentials {
   username: string
@@ -131,6 +132,43 @@ class AdminApiService {
       }
     } catch (error) {
       console.error('Failed to work next user:', error)
+      throw error
+    }
+  }
+
+  async completeCurrentQso(): Promise<{ message: string; cleared_qso: CurrentQsoData | null }> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/qso/complete`, {
+        method: 'POST',
+        headers: this.getAuthHeaders()
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to complete current QSO')
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Failed to complete current QSO:', error)
+      throw error
+    }
+  }
+
+  async setFrequency(frequency: string): Promise<{ message: string; frequency_data: any }> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/frequency`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({ frequency })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to set frequency')
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Failed to set frequency:', error)
       throw error
     }
   }

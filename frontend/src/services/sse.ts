@@ -4,7 +4,7 @@
 import { API_BASE_URL } from '../config/api'
 
 export interface StateChangeEvent {
-  type: 'current_qso' | 'queue_update' | 'system_status' | 'connected' | 'keepalive'
+  type: 'current_qso' | 'queue_update' | 'system_status' | 'frequency_update' | 'connected' | 'keepalive'
   data: any
   timestamp: string
 }
@@ -63,6 +63,10 @@ export class SSEService {
 
       this.eventSource.addEventListener('system_status', (event) => {
         this.handleEvent('system_status', event)
+      })
+
+      this.eventSource.addEventListener('frequency_update', (event) => {
+        this.handleEvent('frequency_update', event)
       })
 
       this.eventSource.addEventListener('connected', (event) => {

@@ -5,7 +5,7 @@
   display: flex;
   flex-direction: column;
   font-family: system-ui, Arial, sans-serif;
-  background-color: #f5f5f5;
+  background-color: var(--color-surface-secondary);
 }
 
 /* Header Styles */
@@ -14,15 +14,54 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem 2rem;
-  background-color: #fff;
-  border-bottom: 2px solid #ddd;
+  background-color: var(--color-surface);
+  border-bottom: 2px solid var(--color-border);
   position: relative;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .logo {
   height: 120px;
   width: auto;
   object-fit: contain;
+}
+
+/* Theme Toggle Styles */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--color-surface-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.theme-toggle:hover {
+  background-color: var(--color-button-bg-hover);
+  border-color: var(--color-link);
+}
+
+.theme-toggle:focus {
+  outline: 2px solid var(--color-link);
+  outline-offset: 2px;
+}
+
+.theme-icon {
+  font-size: 1.1rem;
+}
+
+.theme-label {
+  font-weight: 500;
+  color: var(--color-text);
 }
 
 /* Main Content */
@@ -36,10 +75,10 @@
 
 /* Current Active Callsign Section (Green Border) */
 .current-active-section {
-  border: 3px solid #28a745;
+  border: 3px solid var(--color-success);
   border-radius: 8px;
   padding: 1.5rem;
-  background-color: #fff;
+  background-color: var(--color-surface);
   height: 400px;
   overflow: hidden;
 }
@@ -56,6 +95,7 @@
 
 .operator-image-large .operator-image {  
   height: 350px;
+  max-width: 300px;
   border-radius: 8px;
   object-fit: cover;
 }
@@ -63,13 +103,13 @@
 .operator-image-large .placeholder-image {
   width: 80px;
   height: 80px;
-  background-color: #e9ecef;
+  background-color: var(--color-surface-tertiary);
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 2.5rem;
-  color: #6c757d;
+  color: var(--color-text-secondary);
 }
 
 .active-info {
@@ -79,24 +119,43 @@
 .active-callsign {
   font-size: 2.5rem;
   font-weight: bold;
-  color: #333;
+  color: var(--color-text);
   margin-bottom: 0.5rem;
+}
+
+.active-callsign-link {
+  text-decoration: none;
+  color: var(--color-text);
+  transition: color 0.2s ease;
+  border-bottom: 1px dotted var(--color-link);
+  cursor: pointer;
+}
+
+.active-callsign-link:hover {
+  color: var(--color-link);
+  text-decoration: underline;
+  border-bottom: none;
+}
+
+.active-callsign-link:visited {
+  color: var(--color-text);
+  border-bottom: 1px dotted var(--color-link);
 }
 
 .active-name {
   font-size: 1.3rem;
-  color: #666;
+  color: var(--color-text-secondary);
   margin-bottom: 0.3rem;
 }
 
 .active-location {
   font-size: 1.1rem;
-  color: #888;
+  color: var(--color-text-tertiary);
   margin-bottom: 1rem;
 }
 
 .qrz-button {
-  background-color: #007bff;
+  background-color: var(--color-primary);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -108,21 +167,21 @@
 }
 
 .qrz-button:hover {
-  background-color: #0056b3;
+  background-color: var(--color-primary-hover);
 }
 
 /* Waiting Queue Section (Red Border) */
 .queue-section {
-  border: 3px solid #dc3545;
+  border: 3px solid var(--color-danger);
   border-radius: 8px;
   padding: 1.5rem;
-  background-color: #fff;
+  background-color: var(--color-surface);
 }
 
 .queue-title {
   margin: 0 0 1rem 0;
   font-size: 1.5rem;
-  color: #333;
+  color: var(--color-text);
 }
 
 .queue-container {
@@ -134,10 +193,10 @@
 
 /* Callsign Cards (Yellow Border) */
 .callsign-card {
-  border: 2px solid #ffc107;
+  border: 2px solid var(--color-warning);
   border-radius: 8px;
   padding: 1rem;
-  background-color: #fff;
+  background-color: var(--color-surface);
   min-width: 180px;
   flex-shrink: 0;
   display: flex;
@@ -149,13 +208,13 @@
 .operator-image .placeholder-image {
   width: 60px;
   height: 60px;
-  background-color: #e9ecef;
+  background-color: var(--color-surface-tertiary);
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
-  color: #6c757d;
+  color: var(--color-text-secondary);
   margin-bottom: 0.75rem;
 }
 
@@ -174,23 +233,23 @@
 .card-callsign {
   font-size: 1.2rem;
   font-weight: bold;
-  color: #333;
+  color: var(--color-text);
   margin-bottom: 0.5rem;
 }
 
 .card-location {
   font-size: 0.9rem;
-  color: #666;
+  color: var(--color-text-secondary);
   line-height: 1.3;
 }
 
 /* Entry Form Section (Blue Border) */
 .entry-form-section {
-  border: 3px solid #007bff;
+  border: 3px solid var(--color-primary);
   border-radius: 8px;
   padding: 1.5rem;
   margin: 1rem 2rem 2rem 2rem;
-  background-color: #fff;
+  background-color: var(--color-surface);
 }
 
 .entry-form {
@@ -202,19 +261,21 @@
 .callsign-input {
   flex: 1;
   padding: 0.75rem;
-  border: 2px solid #ddd;
+  border: 2px solid var(--color-border);
   border-radius: 5px;
   font-size: 1.1rem;
   text-transform: uppercase;
+  background-color: var(--color-surface);
+  color: var(--color-text);
 }
 
 .callsign-input:focus {
   outline: none;
-  border-color: #007bff;
+  border-color: var(--color-primary);
 }
 
 .process-button {
-  background-color: #28a745;
+  background-color: var(--color-success);
   color: white;
   border: none;
   padding: 0.75rem 2rem;
@@ -226,7 +287,7 @@
 }
 
 .process-button:hover {
-  background-color: #1e7e34;
+  background-color: var(--color-success-hover);
 }
 
 /* Add Queue Item Styles */
@@ -234,19 +295,19 @@
   cursor: pointer;
   transition: all 0.2s ease;
   border-style: dashed !important;
-  background-color: #f8f9fa;
+  background-color: var(--color-surface-tertiary);
   justify-content: center;
   min-height: 120px;
 }
 
 .add-queue-item:hover {
-  background-color: #e9ecef;
-  border-color: #28a745 !important;
+  background-color: var(--color-button-bg-hover);
+  border-color: var(--color-success) !important;
 }
 
 .add-icon {
   font-size: 2rem;
-  color: #6c757d;
+  color: var(--color-text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -254,7 +315,7 @@
 }
 
 .add-queue-item:hover .add-icon {
-  color: #28a745;
+  color: var(--color-success);
 }
 
 .callsign-input {
@@ -264,20 +325,39 @@
   font-size: 1.2rem;
   font-weight: bold;
   text-align: center;
-  color: #333;
+  color: var(--color-text);
   width: 100%;
   padding: 0.5rem;
 }
 
 .callsign-input::placeholder {
-  color: #999;
+  color: var(--color-text-tertiary);
   font-weight: normal;
+}
+
+.button-group {
+  display: flex;
+  gap: 1rem;
+  flex: 1;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
   .header {
     padding: 1rem;
+  }
+  
+  .header-controls {
+    gap: 0.5rem;
+  }
+  
+  .theme-toggle {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+  }
+  
+  .theme-label {
+    display: none; /* Hide label on small screens, keep only icon */
   }
   
   .logo {
@@ -322,6 +402,26 @@
   }
 }
 
+/* Medium screens: stack admin controls when space is tight */
+@media (max-width: 1024px) {
+  .admin-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.2rem;
+  }
+  
+  .button-group {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .queue-control,
+  .complete-control,
+  .system-status-control {
+    justify-content: center;
+  }
+}
+
 /* Admin Components */
 .admin-login {
   position: relative;
@@ -340,20 +440,20 @@
 }
 
 .admin-login-button {
-  background-color: #fff;
-  color: #6c757d;
-  border-color: #6c757d;
+  background-color: var(--color-surface);
+  color: var(--color-secondary);
+  border-color: var(--color-secondary);
 }
 
 .admin-login-button:hover {
-  background-color: #6c757d;
-  color: #fff;
+  background-color: var(--color-secondary);
+  color: var(--color-surface);
 }
 
 .admin-logged-in {
-  background-color: #28a745;
-  color: #fff;
-  border-color: #28a745;
+  background-color: var(--color-success);
+  color: var(--color-surface);
+  border-color: var(--color-success);
 }
 
 .admin-status {
@@ -363,8 +463,8 @@
 }
 
 .admin-logout-button {
-  background-color: #dc3545;
-  color: #fff;
+  background-color: var(--color-danger);
+  color: var(--color-surface);
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 20px;
@@ -375,7 +475,7 @@
 }
 
 .admin-logout-button:hover {
-  background-color: #c82333;
+  background-color: var(--color-danger-hover);
 }
 
 .admin-login-form {
@@ -383,8 +483,8 @@
   top: 100%;
   right: 0;
   z-index: 1000;
-  background: #fff;
-  border: 2px solid #ddd;
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
   border-radius: 8px;
   padding: 1.5rem;
   min-width: 300px;
@@ -402,7 +502,7 @@
 .login-form-header h3 {
   margin: 0;
   font-size: 1.2rem;
-  color: #333;
+  color: var(--color-text);
 }
 
 .close-button {
@@ -410,7 +510,7 @@
   border: none;
   font-size: 1.2rem;
   cursor: pointer;
-  color: #6c757d;
+  color: var(--color-text-secondary);
   padding: 0;
   width: 24px;
   height: 24px;
@@ -420,7 +520,7 @@
 }
 
 .close-button:hover {
-  color: #dc3545;
+  color: var(--color-danger);
 }
 
 .login-error {
@@ -432,6 +532,11 @@
   font-size: 0.9rem;
 }
 
+[data-theme="dark"] .login-error {
+  background-color: #2d1417;
+  color: #f5c6cb;
+}
+
 .login-fields {
   display: flex;
   flex-direction: column;
@@ -441,14 +546,16 @@
 
 .login-input {
   padding: 0.75rem;
-  border: 2px solid #ddd;
+  border: 2px solid var(--color-border);
   border-radius: 5px;
   font-size: 1rem;
+  background-color: var(--color-surface);
+  color: var(--color-text);
 }
 
 .login-input:focus {
   outline: none;
-  border-color: #007bff;
+  border-color: var(--color-primary);
 }
 
 .login-actions {
@@ -458,8 +565,8 @@
 }
 
 .cancel-button {
-  background: #6c757d;
-  color: #fff;
+  background: var(--color-secondary);
+  color: var(--color-surface);
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 5px;
@@ -468,12 +575,12 @@
 }
 
 .cancel-button:hover {
-  background-color: #5a6268;
+  background-color: var(--color-secondary-hover);
 }
 
 .login-submit-button {
-  background: #007bff;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 5px;
@@ -482,33 +589,38 @@
 }
 
 .login-submit-button:hover {
-  background-color: #0056b3;
+  background-color: var(--color-primary-hover);
 }
 
 /* Admin Section */
 .admin-section {
-  border: 3px solid #6f42c1;
+  border: 3px solid var(--color-purple);
   border-radius: 8px;
   padding: 1.5rem;
-  background-color: #fff;
+  background-color: var(--color-surface);
   margin-top: 2rem;
 }
 
 .admin-title {
   margin: 0 0 1.5rem 0;
   font-size: 1.5rem;
-  color: #6f42c1;
+  color: var(--color-purple);
 }
 
 .admin-controls {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
   gap: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .system-status-control {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
 }
 
 .status-toggle-label {
@@ -520,7 +632,7 @@
 
 .status-label {
   font-weight: 600;
-  color: #333;
+  color: var(--color-text);
   min-width: 120px;
 }
 
@@ -542,7 +654,7 @@
 }
 
 .toggle-button:hover:not(:disabled) {
-  background-color: #f8f9fa;
+  background-color: var(--color-surface-tertiary);
 }
 
 .toggle-button:disabled {
@@ -555,18 +667,18 @@
   width: 60px;
   height: 30px;
   border-radius: 15px;
-  border: 2px solid #ddd;
+  border: 2px solid var(--color-border);
   transition: all 0.3s ease;
 }
 
 .toggle-button.active .toggle-slider {
-  background-color: #28a745;
-  border-color: #28a745;
+  background-color: var(--color-success);
+  border-color: var(--color-success);
 }
 
 .toggle-button.inactive .toggle-slider {
-  background-color: #dc3545;
-  border-color: #dc3545;
+  background-color: var(--color-danger);
+  border-color: var(--color-danger);
 }
 
 .toggle-knob {
@@ -574,7 +686,7 @@
   top: 2px;
   width: 22px;
   height: 22px;
-  background-color: #fff;
+  background-color: var(--color-surface);
   border-radius: 50%;
   transition: transform 0.3s ease;
   transform: translateX(2px);
@@ -591,21 +703,22 @@
 }
 
 .toggle-button.active .toggle-text {
-  color: #28a745;
+  color: var(--color-success);
 }
 
 .toggle-button.inactive .toggle-text {
-  color: #dc3545;
+  color: var(--color-danger);
 }
 
-.queue-control {
+.queue-control,
+.complete-control {
   display: flex;
   justify-content: flex-start;
 }
 
 .work-next-button {
-  background-color: #17a2b8;
-  color: #fff;
+  background-color: var(--color-info);
+  color: var(--color-surface);
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 5px;
@@ -616,11 +729,32 @@
 }
 
 .work-next-button:hover:not(:disabled) {
-  background-color: #138496;
+  background-color: var(--color-info-hover);
 }
 
 .work-next-button:disabled {
-  background-color: #6c757d;
+  background-color: var(--color-secondary);
+  cursor: not-allowed;
+}
+
+.complete-qso-button {
+  background-color: var(--color-orange);
+  color: var(--color-surface);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 5px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.complete-qso-button:hover:not(:disabled) {
+  background-color: var(--color-orange-hover);
+}
+
+.complete-qso-button:disabled {
+  background-color: var(--color-secondary);
   cursor: not-allowed;
 }
 
@@ -636,7 +770,20 @@
   }
   
   .admin-controls {
+    flex-direction: column;
+    align-items: stretch;
     gap: 1rem;
+  }
+  
+  .button-group {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .queue-control,
+  .complete-control,
+  .system-status-control {
+    justify-content: center;
   }
   
   .status-toggle-label {
@@ -700,5 +847,88 @@
   
   .admin-section {
     padding: 1rem;
+  }
+
+  .footer {
+    padding: 1rem;
+  }
+}
+
+/* Footer Styles */
+.footer {
+  background-color: var(--color-surface);
+  border-top: 2px solid var(--color-border);
+  padding: 1rem 2rem;
+  margin-top: auto;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.github-link {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.github-link:hover {
+  color: var(--color-text);
+  text-decoration: underline;
+}
+
+/* Alert and Status Message Styles */
+.alert-warning {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  color: #856404;
+  padding: 10px;
+  border-radius: 4px;
+  margin: 10px 0;
+  text-align: center;
+}
+
+[data-theme="dark"] .alert-warning {
+  background-color: #332b00;
+  border-color: #665500;
+  color: #ffcc00;
+}
+
+.alert-error {
+  color: #dc3545;
+  padding: 10px;
+  border-radius: 4px;
+  margin: 10px 0;
+}
+
+[data-theme="dark"] .alert-error {
+  color: #ff6b6b;
+}
+
+.system-inactive-alert {
+  color: #ff6600;
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  padding: 10px;
+  border-radius: 4px;
+  margin: 10px 0;
+}
+
+[data-theme="dark"] .system-inactive-alert {
+  color: #ffaa44;
+  background-color: #332200;
+  border-color: #664400;
+}
+
+/* Accessibility: Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

@@ -21,3 +21,22 @@ def get_public_system_status():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f'Database error: {str(e)}')
+
+@public_router.get('/frequency')
+def get_current_frequency():
+    """Get the current transmission frequency - public endpoint"""
+    try:
+        frequency_data = queue_db.get_frequency()
+        if frequency_data is None:
+            return {
+                'frequency': None,
+                'last_updated': None
+            }
+        
+        # Return frequency data excluding admin username for public consumption
+        return {
+            'frequency': frequency_data.get('frequency'),
+            'last_updated': frequency_data.get('last_updated')
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Database error: {str(e)}')

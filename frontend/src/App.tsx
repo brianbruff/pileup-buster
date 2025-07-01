@@ -1,25 +1,69 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import './App.css'
 import pileupBusterLogo from './assets/logo.png'
+import pileupBusterLogoDark from './assets/logo-dark.png'
 import CurrentActiveCallsign, { type CurrentActiveUser } from './components/CurrentActiveCallsign'
 import WaitingQueue from './components/WaitingQueue'
 import AdminLogin from './components/AdminLogin'
 import AdminSection from './components/AdminSection'
+import FrequencyDisplay from './components/FrequencyDisplay'
+import ThemeToggle from './components/ThemeToggle'
+import { useTheme } from './contexts/ThemeContext'
 import { type QueueItemData } from './components/QueueItem'
 import { apiService, type CurrentQsoData, type QueueEntry, ApiError } from './services/api'
 import { adminApiService } from './services/adminApi'
 import { sseService, type StateChangeEvent } from './services/sse'
 
 function App() {
+  // Theme
+  const { resolvedTheme } = useTheme()
+  
   // Real data state
   const [currentQso, setCurrentQso] = useState<CurrentQsoData | null>(null)
   const [queueData, setQueueData] = useState<QueueItemData[]>([])
+  const [queueTotal, setQueueTotal] = useState(0)
+  const [queueMaxSize, setQueueMaxSize] = useState(4)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   
   // Admin state
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false)
   const [systemStatus, setSystemStatus] = useState<boolean | null>(null)
+
+  // Ref to track previous callsign for clipboard functionality
+  const previousCallsignRef = useRef<string | null>(null)
+
+  // Utility function to copy text to clipboard
+  const copyToClipboard = async (text: string): Promise<void> => {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        // Use modern Clipboard API if available
+        await navigator.clipboard.writeText(text)
+        console.log(`Copied callsign to clipboard: ${text}`)
+      } else {
+        // Fallback for older browsers or insecure contexts
+        const textArea = document.createElement('textarea')
+        textArea.value = text
+        textArea.style.position = 'fixed'
+        textArea.style.left = '-999999px'
+        textArea.style.top = '-999999px'
+        document.body.appendChild(textArea)
+        textArea.focus()
+        textArea.select()
+        
+        try {
+          document.execCommand('copy')
+          console.log(`Copied callsign to clipboard (fallback): ${text}`)
+        } catch (err) {
+          console.warn('Failed to copy callsign to clipboard:', err)
+        } finally {
+          document.body.removeChild(textArea)
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to copy callsign to clipboard:', err)
+    }
+  }
 
   // Convert QueueEntry to QueueItemData format
   const convertQueueEntryToItemData = (entry: QueueEntry): QueueItemData => {
@@ -44,6 +88,8 @@ function App() {
     try {
       const data = await apiService.getCurrentQso()
       setCurrentQso(data)
+      // Update ref for initial load (don't copy to clipboard on initial load)
+      previousCallsignRef.current = data?.callsign || null
     } catch (err) {
       if (err instanceof ApiError) {
         console.error('Failed to fetch current QSO:', err.detail || err.message)
@@ -61,6 +107,8 @@ function App() {
       const response = await apiService.getQueueList()
       const queueItems = response.queue.map(convertQueueEntryToItemData)
       setQueueData(queueItems)
+      setQueueTotal(response.total)
+      setQueueMaxSize(response.max_size)
     } catch (err) {
       if (err instanceof ApiError) {
         console.error('Failed to fetch queue list:', err.detail || err.message)
@@ -115,7 +163,19 @@ function App() {
     // Event handlers for different types of state changes
     const handleCurrentQsoEvent = (event: StateChangeEvent) => {
       console.log('Received current_qso event:', event)
-      setCurrentQso(event.data)
+      const newQso = event.data
+      const previousCallsign = previousCallsignRef.current
+      const newCallsign = newQso?.callsign
+      
+      // Copy callsign to clipboard when a new callsign becomes active
+      if (newCallsign && newCallsign !== previousCallsign) {
+        copyToClipboard(newCallsign)
+      }
+      
+      // Update the ref with the new callsign
+      previousCallsignRef.current = newCallsign || null
+      
+      setCurrentQso(newQso)
     }
 
     const handleQueueUpdateEvent = (event: StateChangeEvent) => {
@@ -123,6 +183,12 @@ function App() {
       if (event.data?.queue) {
         const queueItems = event.data.queue.map(convertQueueEntryToItemData)
         setQueueData(queueItems)
+        if (event.data.total !== undefined) {
+          setQueueTotal(event.data.total)
+        }
+        if (event.data.max_size !== undefined) {
+          setQueueMaxSize(event.data.max_size)
+        }
       }
     }
 
@@ -229,20 +295,33 @@ function App() {
     // No need to manually refresh - SSE will broadcast the updates
   }
 
+  const handleCompleteCurrentQso = async (): Promise<void> => {
+    await adminApiService.completeCurrentQso()
+    // No need to manually refresh - SSE will broadcast the updates
+  }
+
+  const handleSetFrequency = async (frequency: string): Promise<void> => {
+    await adminApiService.setFrequency(frequency)
+    // No need to manually refresh - SSE will broadcast the frequency update
+  }
+
   return (
     <div className="pileup-buster-app">
       {/* Header */}
       <header className="header">
         <img 
-          src={pileupBusterLogo} 
+          src={resolvedTheme === 'dark' ? pileupBusterLogoDark : pileupBusterLogo} 
           alt="Pileup Buster Logo" 
           className="logo"
         />
-        <AdminLogin 
-          onLogin={handleAdminLogin}
-          isLoggedIn={isAdminLoggedIn}
-          onLogout={handleAdminLogout}
-        />
+        <div className="header-controls">
+          <ThemeToggle />
+          <AdminLogin 
+            onLogin={handleAdminLogin}
+            isLoggedIn={isAdminLoggedIn}
+            onLogout={handleAdminLogout}
+          />
+        </div>
       </header>
 
       <main className="main-content">
@@ -250,21 +329,14 @@ function App() {
         
         {/* Show system status info instead of red error when system is inactive */}
         {systemStatus === false && (
-          <div style={{ 
-            color: '#ff6600', 
-            backgroundColor: '#fff3cd', 
-            border: '1px solid #ffeaa7',
-            padding: '10px',
-            borderRadius: '4px',
-            margin: '10px 0'
-          }}>
+          <div className="system-inactive-alert">
             ⚠️ System is currently inactive. Registration and queue access are disabled.
           </div>
         )}
         
         {/* Show errors only if they're not system inactive related */}
         {error && systemStatus !== false && (
-          <div style={{ color: 'red' }}>Error: {error}</div>
+          <div className="alert-error">Error: {error}</div>
         )}
         
         {/* Current Active Callsign (Green Border) */}
@@ -276,18 +348,39 @@ function App() {
         {/* Waiting Queue Container (Red Border) */}
         <WaitingQueue 
           queueData={queueData} 
+          queueTotal={queueTotal}
+          queueMaxSize={queueMaxSize}
           onAddCallsign={handleCallsignRegistration}
           systemActive={systemStatus === true}
         />
+
+        {/* Frequency Display - Visible to all users */}
+        <FrequencyDisplay className="public-frequency-display" />
 
         {/* Admin Section - Only visible when logged in */}
         <AdminSection 
           isLoggedIn={isAdminLoggedIn}
           onToggleSystemStatus={handleToggleSystemStatus}
           onWorkNextUser={handleWorkNextUser}
+          onCompleteCurrentQso={handleCompleteCurrentQso}
+          onSetFrequency={handleSetFrequency}
           systemStatus={systemStatus}
         />
       </main>
+
+      {/* Footer */}
+      <footer className="footer">
+        <div className="footer-content">
+          <a 
+            href="https://github.com/brianbruff/pileup-buster" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="github-link"
+          >
+            View on GitHub
+          </a>
+        </div>
+      </footer>
     </div>
   )
 }
